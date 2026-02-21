@@ -14,15 +14,14 @@
 
 ## 📱 Screenshots
 
-<div align="center">
-  <img src="assets/screenshots/1.png" width="300" alt="Home Dashboard"/>
-  <img src="assets/screenshots/2.png" width="300" alt="Statistics Overview"/>
-</div>
-<br>
-<div align="center">
-  <img src="assets/screenshots/3.png" width="300" alt="Exercise Library 1"/>
-  <img src="assets/screenshots/4.png" width="300" alt="Exercise Library 2"/>
-</div>
+<p align="center">
+  <img src="assets/screenshots/1.png" width="48%" />
+  <img src="assets/screenshots/2.png" width="48%" />
+</p>
+<p align="center">
+  <img src="assets/screenshots/3.png" width="48%" />
+  <img src="assets/screenshots/4.png" width="48%" />
+</p>
 
 *(Note: Please ensure the screenshots you uploaded are placed inside the `assets/screenshots/` folder named `1.png`, `2.png`, `3.png`, and `4.png` respectively).*
 
@@ -30,8 +29,8 @@
 
 You can easily install and test the app on your Android device!
 
-1. Download the latest APK file directly from this repository:
-   👉 **[Download app-release.apk](assets/app-release.apk)**
+1. Go to the **[Releases](https://github.com/serdevir91/Workout-Tracker/releases)** section of this repository.
+2. Download the latest `app-release.apk` file.
 2. Transfer the file to your Android phone.
 3. Open the file manager, tap on the APK, and select **Install** (You may need to allow "Install from unknown sources" in your settings).
 
