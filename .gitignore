@@ -1,0 +1,19 @@
+# Strict exclusions for privacy and safety
+*.py
+*.html
+*.txt
+
+# Flutter / Environment paths
+.dart_tool/
+.idea/
+.vscode/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+android/.gradle/
+android/app/src/main/gen/
+windows/flutter/ephemeral/
+
+# Exceptions for required presentation assets
+!assets/app-release.apk
+!assets/screenshots/
