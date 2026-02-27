@@ -1,32 +1,73 @@
 /// Represents a pre-built workout plan template
 class WorkoutPlan {
+  final int? id;
   final int dayNumber;
   final String name;
   final String targetMuscles;
   final List<PlanExercise> exercises;
 
   const WorkoutPlan({
+    this.id,
     required this.dayNumber,
     required this.name,
     required this.targetMuscles,
     required this.exercises,
   });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'day_number': dayNumber,
+        'name': name,
+        'target_muscles': targetMuscles,
+      };
+
+  factory WorkoutPlan.fromMap(Map<String, dynamic> map, List<PlanExercise> exercises) {
+    return WorkoutPlan(
+      id: map['id'] as int,
+      dayNumber: map['day_number'] as int,
+      name: map['name'] as String,
+      targetMuscles: map['target_muscles'] as String,
+      exercises: exercises,
+    );
+  }
+  
+  WorkoutPlan copyWith({
+    int? id,
+    int? dayNumber,
+    String? name,
+    String? targetMuscles,
+    List<PlanExercise>? exercises,
+  }) {
+    return WorkoutPlan(
+      id: id ?? this.id,
+      dayNumber: dayNumber ?? this.dayNumber,
+      name: name ?? this.name,
+      targetMuscles: targetMuscles ?? this.targetMuscles,
+      exercises: exercises ?? this.exercises,
+    );
+  }
 }
 
-/// Represents an exercise within a workout plan
+/// Represents an exercise within a workout plan template
 class PlanExercise {
+  final int? id;
+  final int? templateId;
   final String name;
   final int sets;
   final int reps;
   final double weight;
-  final int? durationMinutes; // for cardio exercises
+  final int? durationMinutes;
+  final int restSeconds;
 
   const PlanExercise({
+    this.id,
+    this.templateId,
     required this.name,
     required this.sets,
     required this.reps,
     this.weight = 0,
     this.durationMinutes,
+    this.restSeconds = 60,
   });
 
   String get displayInfo {
@@ -37,15 +78,60 @@ class PlanExercise {
       final weightStr = weight == weight.truncateToDouble()
           ? weight.toInt().toString()
           : weight.toString();
-      return '${sets}x$reps × $weightStr kg';
+      return '${sets}x$reps × $weightStr kg • $restSeconds s';
     }
-    return '${sets}x$reps';
+    return '${sets}x$reps • $restSeconds s';
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'template_id': templateId,
+        'name': name,
+        'sets': sets,
+        'reps': reps,
+        'weight': weight,
+        'duration_minutes': durationMinutes,
+        'rest_seconds': restSeconds,
+      };
+
+  factory PlanExercise.fromMap(Map<String, dynamic> map) {
+    return PlanExercise(
+      id: map['id'] as int?,
+      templateId: map['template_id'] as int?,
+      name: map['name'] as String,
+      sets: (map['sets'] as num?)?.toInt() ?? 1,
+      reps: (map['reps'] as num?)?.toInt() ?? 0,
+      weight: (map['weight'] as num?)?.toDouble() ?? 0.0,
+      durationMinutes: map['duration_minutes'] as int?,
+      restSeconds: (map['rest_seconds'] as num?)?.toInt() ?? 60,
+    );
+  }
+  
+  PlanExercise copyWith({
+    int? id,
+    int? templateId,
+    String? name,
+    int? sets,
+    int? reps,
+    double? weight,
+    int? durationMinutes,
+    int? restSeconds,
+  }) {
+    return PlanExercise(
+      id: id ?? this.id,
+      templateId: templateId ?? this.templateId,
+      name: name ?? this.name,
+      sets: sets ?? this.sets,
+      reps: reps ?? this.reps,
+      weight: weight ?? this.weight,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      restSeconds: restSeconds ?? this.restSeconds,
+    );
   }
 }
 
-/// All 5 workout day plans extracted from user's training images
+/// Keep the default plans to seed the DB initially
 const List<WorkoutPlan> defaultWorkoutPlans = [
-  // Day 1 - Push A (Chest/Shoulder/Triceps)
   WorkoutPlan(
     dayNumber: 1,
     name: 'Push A',
@@ -60,8 +146,6 @@ const List<WorkoutPlan> defaultWorkoutPlans = [
       PlanExercise(name: 'Triceps Pushdown', sets: 4, reps: 10, weight: 40),
     ],
   ),
-
-  // Day 2 - Pull (Back/Biceps)
   WorkoutPlan(
     dayNumber: 2,
     name: 'Pull',
@@ -76,8 +160,6 @@ const List<WorkoutPlan> defaultWorkoutPlans = [
       PlanExercise(name: 'One-arm Scott Dumbbell Curl', sets: 4, reps: 8, weight: 10),
     ],
   ),
-
-  // Day 3 - Legs
   WorkoutPlan(
     dayNumber: 3,
     name: 'Legs',
@@ -90,8 +172,6 @@ const List<WorkoutPlan> defaultWorkoutPlans = [
       PlanExercise(name: 'Seated Calf Raises', sets: 4, reps: 20, weight: 25),
     ],
   ),
-
-  // Day 4 - Push B (variant)
   WorkoutPlan(
     dayNumber: 4,
     name: 'Push B',
@@ -106,8 +186,6 @@ const List<WorkoutPlan> defaultWorkoutPlans = [
       PlanExercise(name: 'Triceps Pushdown', sets: 4, reps: 10, weight: 35),
     ],
   ),
-
-  // Day 5 - Full Body (Pull + Legs)
   WorkoutPlan(
     dayNumber: 5,
     name: 'Full Body',

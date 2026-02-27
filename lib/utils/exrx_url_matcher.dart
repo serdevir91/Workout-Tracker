@@ -17,6 +17,12 @@ class ExrxUrlMatcher {
     }
   }
 
+  /// Get all loaded exercises in the library.
+  static Future<List<Map<String, dynamic>>> getAllExercises() async {
+    await _ensureLoaded();
+    return _exercises ?? [];
+  }
+
   /// Find the best matching ExRx exercise for a given exercise name.
   /// Returns a map with 'url' and 'gif_url' keys, or null if no match.
   static Future<Map<String, String>?> findExercise(String exerciseName) async {
@@ -84,5 +90,49 @@ class ExrxUrlMatcher {
     final result = await findExercise(exerciseName);
     if (result == null || result['url']!.isEmpty) return null;
     return result['url'];
+  }
+
+  /// Find the muscle group for a given exercise name.
+  static Future<String> findMuscleGroup(String exerciseName) async {
+    await _ensureLoaded();
+    if (_exercises == null || _exercises!.isEmpty) return 'Other';
+
+    final lower = exerciseName.toLowerCase().trim();
+    if (lower.isEmpty) return 'Other';
+
+    // Try exact match first
+    for (final ex in _exercises!) {
+      if ((ex['name'] as String).toLowerCase() == lower) {
+        return ex['muscle_group'] as String? ?? 'Other';
+      }
+    }
+
+    // Try contains match
+    for (final ex in _exercises!) {
+      final exName = (ex['name'] as String).toLowerCase();
+      if (exName.contains(lower) || lower.contains(exName)) {
+        return ex['muscle_group'] as String? ?? 'Other';
+      }
+    }
+
+    return 'Other';
+  }
+
+  static Map<String, String>? _muscleGroupMapCache;
+
+  /// Build a map of exercise name -> muscle group for all known exercises.
+  /// Cached after first call.
+  static Future<Map<String, String>> buildMuscleGroupMap() async {
+    if (_muscleGroupMapCache != null) return _muscleGroupMapCache!;
+    await _ensureLoaded();
+    final map = <String, String>{};
+    if (_exercises == null) return map;
+    for (final ex in _exercises!) {
+      final name = (ex['name'] as String).toLowerCase();
+      final group = ex['muscle_group'] as String? ?? 'Other';
+      map[name] = group;
+    }
+    _muscleGroupMapCache = map;
+    return map;
   }
 }

@@ -5,6 +5,8 @@ class Workout {
   final DateTime startTime;
   final DateTime? endTime;
   final int totalDuration; // seconds
+  final double calories; // kcal
+  final double completionPercentage;
 
   Workout({
     this.id,
@@ -12,6 +14,8 @@ class Workout {
     required this.startTime,
     this.endTime,
     this.totalDuration = 0,
+    this.calories = 0,
+    this.completionPercentage = 100.0,
   });
 
   Map<String, dynamic> toMap() => {
@@ -20,6 +24,8 @@ class Workout {
         'start_time': startTime.toIso8601String(),
         'end_time': endTime?.toIso8601String(),
         'total_duration': totalDuration,
+        'calories': calories,
+        'completion_percentage': completionPercentage,
       };
 
   factory Workout.fromMap(Map<String, dynamic> map) => Workout(
@@ -30,6 +36,8 @@ class Workout {
             ? DateTime.parse(map['end_time'] as String)
             : null,
         totalDuration: map['total_duration'] as int? ?? 0,
+        calories: (map['calories'] as num?)?.toDouble() ?? 0.0,
+        completionPercentage: (map['completion_percentage'] as num?)?.toDouble() ?? 100.0,
       );
 
   Workout copyWith({
@@ -38,6 +46,8 @@ class Workout {
     DateTime? startTime,
     DateTime? endTime,
     int? totalDuration,
+    double? calories,
+    double? completionPercentage,
   }) =>
       Workout(
         id: id ?? this.id,
@@ -45,6 +55,8 @@ class Workout {
         startTime: startTime ?? this.startTime,
         endTime: endTime ?? this.endTime,
         totalDuration: totalDuration ?? this.totalDuration,
+        calories: calories ?? this.calories,
+        completionPercentage: completionPercentage ?? this.completionPercentage,
       );
 }
 
@@ -147,26 +159,3 @@ class ExerciseSet {
       );
 }
 
-/// Common exercise names for quick selection
-const List<String> commonExercises = [
-  'Bench Press',
-  'Squat',
-  'Deadlift',
-  'Overhead Press',
-  'Barbell Row',
-  'Pull Up',
-  'Lat Pulldown',
-  'Leg Press',
-  'Leg Curl',
-  'Leg Extension',
-  'Dumbbell Curl',
-  'Tricep Pushdown',
-  'Cable Fly',
-  'Dumbbell Lateral Raise',
-  'Face Pull',
-  'Romanian Deadlift',
-  'Hip Thrust',
-  'Calf Raise',
-  'Plank',
-  'Crunch',
-];

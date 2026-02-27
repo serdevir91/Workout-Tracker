@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
+import '../utils/exrx_url_matcher.dart';
 import '../utils/formatters.dart';
-import '../utils/image_mapper.dart';
+import '../widgets/exercise_thumbnail.dart';
 
 class WorkoutDetailScreen extends StatefulWidget {
   final int workoutId;
@@ -16,6 +17,7 @@ class WorkoutDetailScreen extends StatefulWidget {
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   Map<String, dynamic>? _data;
   bool _isLoading = true;
+  Map<String, bool> _cardioMap = {};
 
   @override
   void initState() {
@@ -27,8 +29,22 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     final provider = context.read<WorkoutProvider>();
     final data = await provider.loadWorkoutDetail(widget.workoutId);
     if (!mounted) return;
+
+    // Build cardio map for all exercises using library muscle_group
+    final exercises = data?['exercises'] as List<Map<String, dynamic>>? ?? [];
+    final cardioMap = <String, bool>{};
+    for (final exData in exercises) {
+      final name = exData['exercise'].name as String;
+      if (!cardioMap.containsKey(name)) {
+        final muscleGroup = await ExrxUrlMatcher.findMuscleGroup(name);
+        cardioMap[name] = ActiveExercise.detectCardio(name, muscleGroup: muscleGroup);
+      }
+    }
+
+    if (!mounted) return;
     setState(() {
       _data = data;
+      _cardioMap = cardioMap;
       _isLoading = false;
     });
   }
@@ -59,6 +75,32 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
         title: Text(workout.name),
         backgroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Color(0xFFFF6B6B)),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: const Color(0xFF1A1A2E),
+                  title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
+                  content: Text('Are you sure you want to delete "${workout.name}"? This action cannot be undone.', style: const TextStyle(color: Color(0xFFA0A0C0))),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () {
+                        context.read<WorkoutProvider>().deleteWorkout(widget.workoutId);
+                        Navigator.pop(ctx);
+                        Navigator.pop(context); // Go back after delete
+                      },
+                      child: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -78,6 +120,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
 
   Widget _buildSummaryCard(dynamic workout) {
     final duration = workout.totalDuration ?? 0;
+    final calories = workout.calories ?? 0;
+    
     return Card(
       color: const Color(0xFF0F0F12),
       shape: RoundedRectangleBorder(
@@ -90,7 +134,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
           children: [
             _buildSummaryColumn('Date', formatDate(workout.startTime), Icons.calendar_today, const Color(0xFF6C63FF)),
             _buildSummaryColumn('Time', formatTime(workout.startTime), Icons.access_time, const Color(0xFF00D4AA)),
-            _buildSummaryColumn('Duration', formatDuration(duration), Icons.timer, const Color(0xFFFF6B6B)),
+            _buildSummaryColumn('Duration', formatDuration(duration), Icons.timer, const Color(0xFF00A383)),
+            if (calories > 0)
+              _buildSummaryColumn('Calories', '${calories.toInt()}', Icons.local_fire_department, Colors.orange),
           ],
         ),
       ),
@@ -112,11 +158,17 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   Widget _buildExerciseCard(Map<String, dynamic> exData) {
     final exercise = exData['exercise'];
     final sets = exData['sets'] as List<dynamic>;
+    final isCardio = _cardioMap[exercise.name] ?? ActiveExercise.detectCardio(exercise.name);
 
     // Calculate total volume for this exercise
     double volume = 0;
+    int totalDuration = 0;
     for (var s in sets) {
-      volume += (s.weight * s.reps);
+      if (isCardio) {
+        totalDuration += (s.reps as int);
+      } else {
+        volume += (s.weight * s.reps);
+      }
     }
 
     return Card(
@@ -136,15 +188,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 Expanded(
                   child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          ImageMapper.getImageForExercise(exercise.name),
-                          width: 44,
-                          height: 44,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      ExerciseThumbnail(exerciseName: exercise.name, size: 44),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -156,7 +200,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                   ),
                 ),
                 Text(
-                  '${volume.toStringAsFixed(0)} kg',
+                  isCardio ? '$totalDuration min' : '${volume.toStringAsFixed(0)} kg',
                   style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ],
@@ -173,13 +217,18 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Expanded(flex: 1, child: Text('Set', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
-                          Expanded(flex: 2, child: Text('Weight', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
-                          Expanded(flex: 2, child: Text('Reps', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                          if (isCardio) ...[
+                            const Expanded(flex: 1, child: Text('#', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                            const Expanded(flex: 2, child: Text('Duration', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                          ] else ...[
+                            const Expanded(flex: 1, child: Text('Set', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                            const Expanded(flex: 2, child: Text('Weight', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                            const Expanded(flex: 2, child: Text('Reps', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                          ],
                         ],
                       ),
                     ),
@@ -188,9 +237,14 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Expanded(flex: 1, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                          Expanded(flex: 2, child: Text('${s.weight} kg', style: const TextStyle(color: Colors.white))),
-                          Expanded(flex: 2, child: Text('${s.reps}', style: const TextStyle(color: Colors.white))),
+                          if (isCardio) ...[
+                            Expanded(flex: 1, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                            Expanded(flex: 2, child: Text('${s.reps} min', style: const TextStyle(color: Colors.white))),
+                          ] else ...[
+                            Expanded(flex: 1, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                            Expanded(flex: 2, child: Text('${s.weight} kg', style: const TextStyle(color: Colors.white))),
+                            Expanded(flex: 2, child: Text('${s.reps}', style: const TextStyle(color: Colors.white))),
+                          ],
                         ],
                       ),
                     )),

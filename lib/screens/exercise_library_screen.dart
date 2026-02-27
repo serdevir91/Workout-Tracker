@@ -1,15 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../utils/exrx_url_matcher.dart';
 import 'exercise_info_screen.dart';
 
-/// A screen that loads all ExRx exercises from JSON and allows
-/// searching/filtering by muscle group category and viewing exercise info.
+/// Modern exercise library with grid/list view, GIF thumbnails,
+/// category tabs with counts, and smooth search.
 class ExerciseLibraryScreen extends StatefulWidget {
-  /// If true, the screen acts as a picker — tapping an exercise returns it.
   final bool pickMode;
-
   const ExerciseLibraryScreen({super.key, this.pickMode = false});
 
   @override
@@ -21,43 +18,29 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   List<Map<String, dynamic>> _filteredExercises = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
+  bool _isGridView = true;
   String _selectedCategory = 'All';
-  List<String> _categories = ['All'];
 
-  // Category icons and colors
-  static const Map<String, IconData> _categoryIcons = {
-    'All': Icons.apps,
-    'Back': Icons.arrow_back,
-    'Chest': Icons.expand,
-    'Shoulders': Icons.accessibility_new,
-    'Arms': Icons.sports_martial_arts,
-    'Forearms': Icons.front_hand,
-    'Core': Icons.center_focus_strong,
-    'Glutes & Hips': Icons.airline_seat_legroom_extra,
-    'Legs': Icons.directions_walk,
-    'Calves': Icons.do_not_step,
-    'Neck': Icons.person,
-    'Full Body': Icons.fitness_center,
-    'Plyometrics': Icons.flash_on,
-    'Cardio': Icons.directions_run,
-  };
+  // Ordered categories with their metadata
+  static const List<_CategoryMeta> _categoryDefs = [
+    _CategoryMeta('All', Icons.apps_rounded, Color(0xFF6C63FF)),
+    _CategoryMeta('Chest', Icons.expand_rounded, Color(0xFFFF6B6B)),
+    _CategoryMeta('Back', Icons.swap_horiz_rounded, Color(0xFF4ECDC4)),
+    _CategoryMeta('Shoulders', Icons.accessibility_new_rounded, Color(0xFFFFBE0B)),
+    _CategoryMeta('Arms', Icons.sports_martial_arts_rounded, Color(0xFFFF006E)),
+    _CategoryMeta('Forearms', Icons.front_hand_rounded, Color(0xFFFF8500)),
+    _CategoryMeta('Core', Icons.center_focus_strong_rounded, Color(0xFF8338EC)),
+    _CategoryMeta('Legs', Icons.directions_walk_rounded, Color(0xFF00D4AA)),
+    _CategoryMeta('Glutes & Hips', Icons.airline_seat_legroom_extra_rounded, Color(0xFFFB5607)),
+    _CategoryMeta('Calves', Icons.do_not_step_rounded, Color(0xFF3A86FF)),
+    _CategoryMeta('Neck', Icons.person_rounded, Color(0xFFADB5BD)),
+    _CategoryMeta('Cardio', Icons.directions_run_rounded, Color(0xFF2EC4B6)),
+    _CategoryMeta('Plyometrics', Icons.flash_on_rounded, Color(0xFFE63946)),
+    _CategoryMeta('Full Body', Icons.fitness_center_rounded, Color(0xFFFFB703)),
+    _CategoryMeta('Stretches', Icons.self_improvement_rounded, Color(0xFF90BE6D)),
+  ];
 
-  static const Map<String, Color> _categoryColors = {
-    'All': Color(0xFF6C63FF),
-    'Back': Color(0xFF4ECDC4),
-    'Chest': Color(0xFFFF6B6B),
-    'Shoulders': Color(0xFFFFBE0B),
-    'Arms': Color(0xFFFF006E),
-    'Forearms': Color(0xFFFF8500),
-    'Core': Color(0xFF8338EC),
-    'Glutes & Hips': Color(0xFFFB5607),
-    'Legs': Color(0xFF00D4AA),
-    'Calves': Color(0xFF3A86FF),
-    'Neck': Color(0xFFADB5BD),
-    'Full Body': Color(0xFFFFB703),
-    'Plyometrics': Color(0xFFE63946),
-    'Cardio': Color(0xFF2EC4B6),
-  };
+  Map<String, int> _categoryCounts = {};
 
   @override
   void initState() {
@@ -74,30 +57,26 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   Future<void> _loadExercises() async {
     try {
-      final jsonStr = await rootBundle.loadString('assets/data/exrx_exercises.json');
-      final List<dynamic> data = json.decode(jsonStr);
+      // Use shared cache from ExrxUrlMatcher (avoids re-loading JSON)
+      final data = await ExrxUrlMatcher.getAllExercises();
       final exercises = data
-          .map((e) => Map<String, dynamic>.from(e as Map))
           .where((e) => (e['name'] as String).length > 2)
           .toList()
-        ..sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
+        ..sort((a, b) => (a['name'] as String)
+            .toLowerCase()
+            .compareTo((b['name'] as String).toLowerCase()));
 
-      // Extract unique categories
-      final catSet = <String>{};
+      // Build category counts
+      final counts = <String, int>{'All': exercises.length};
       for (final ex in exercises) {
         final cat = ex['muscle_group'] as String? ?? 'Other';
-        // Only add base category (not stretch variants)
-        final baseCat = cat.replaceAll(' (Stretch)', '');
-        catSet.add(baseCat);
+        counts[cat] = (counts[cat] ?? 0) + 1;
       }
-
-      final cats = catSet.toList()..sort();
-      cats.insert(0, 'All');
 
       setState(() {
         _allExercises = exercises;
         _filteredExercises = exercises;
-        _categories = cats;
+        _categoryCounts = counts;
         _isLoading = false;
       });
     } catch (e) {
@@ -109,16 +88,14 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final query = _searchController.text.toLowerCase().trim();
     setState(() {
       _filteredExercises = _allExercises.where((ex) {
-        // Category filter
         if (_selectedCategory != 'All') {
           final cat = ex['muscle_group'] as String? ?? 'Other';
-          final baseCat = cat.replaceAll(' (Stretch)', '');
-          if (baseCat != _selectedCategory) return false;
+          if (cat != _selectedCategory) return false;
         }
-
-        // Search filter
         if (query.isNotEmpty) {
-          return (ex['name'] as String).toLowerCase().contains(query);
+          final name = (ex['name'] as String).toLowerCase();
+          final group = (ex['muscle_group'] as String? ?? '').toLowerCase();
+          return name.contains(query) || group.contains(query);
         }
         return true;
       }).toList();
@@ -126,196 +103,573 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _selectCategory(String category) {
-    setState(() {
-      _selectedCategory = category;
-    });
+    setState(() => _selectedCategory = category);
     _filterExercises();
+  }
+
+  _CategoryMeta _getMeta(String cat) {
+    return _categoryDefs.firstWhere(
+      (m) => m.name == cat,
+      orElse: () =>
+          const _CategoryMeta('Other', Icons.fitness_center, Color(0xFF6C63FF)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF111111),
-        title: Text(
-          widget.pickMode ? 'Choose Exercise' : 'Exercise Library',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Search ${_allExercises.length} exercises...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-                prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4)),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: const Color(0xFF1A1A2E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-            ),
-          ),
-        ),
-      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
-          : Column(
-              children: [
-                // Category chips
-                SizedBox(
-                  height: 48,
-                  child: ScrollConfiguration(
-                    behavior: ScrollConfiguration.of(context).copyWith(
-                      dragDevices: {
-                        PointerDeviceKind.touch,
-                        PointerDeviceKind.mouse,
-                        PointerDeviceKind.trackpad,
-                      },
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+          : NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                // Sliver app bar with search
+                SliverAppBar(
+                  backgroundColor: const Color(0xFF0F0F15),
+                  pinned: true,
+                  floating: true,
+                  snap: true,
+                  expandedHeight: 120,
+                  title: Text(
+                    widget.pickMode ? 'Choose Exercise' : 'Exercise Library',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      letterSpacing: -0.3,
                     ),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categories[index];
-                        final isSelected = _selectedCategory == cat;
-                        final color = _categoryColors[cat] ?? const Color(0xFF6C63FF);
-                        final icon = _categoryIcons[cat] ?? Icons.fitness_center;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            selected: isSelected,
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 14,
-                                    color: isSelected ? Colors.white : color),
-                                const SizedBox(width: 4),
-                                Text(cat, style: TextStyle(fontSize: 12,
-                                    color: isSelected ? Colors.white : color)),
-                              ],
-                            ),
-                            onSelected: (_) => _selectCategory(cat),
-                            selectedColor: color,
-                            backgroundColor: color.withValues(alpha: 0.1),
-                            side: BorderSide(color: color.withValues(alpha: 0.3)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        );
-                      },
+                  ),
+                  actions: [
+                    // Grid/List toggle (available in both browse and pick modes)
+                    IconButton(
+                      icon: Icon(
+                        _isGridView
+                            ? Icons.view_list_rounded
+                            : Icons.grid_view_rounded,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () =>
+                          setState(() => _isGridView = !_isGridView),
+                      tooltip: _isGridView ? 'List view' : 'Grid view',
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      alignment: Alignment.bottomCenter,
+                      padding: const EdgeInsets.only(
+                          left: 16, right: 16, bottom: 8, top: 0),
+                      child: _buildSearchBar(),
                     ),
                   ),
                 ),
 
-                // Exercise list
-                Expanded(
-                  child: _filteredExercises.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.search_off, size: 48,
-                                  color: Colors.white.withValues(alpha: 0.2)),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'No exercises found',
-                                style: TextStyle(color: Color(0xFF8888AA), fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: _filteredExercises.length,
-                          padding: const EdgeInsets.only(top: 4, bottom: 100),
-                          itemBuilder: (context, index) {
-                            final exercise = _filteredExercises[index];
-                            final name = exercise['name'] as String;
-                            final url = exercise['url'] as String;
-                            final gifUrl = exercise['gif_url'] as String? ?? '';
-                            final muscleGroup = exercise['muscle_group'] as String? ?? '';
-                            final baseCat = muscleGroup.replaceAll(' (Stretch)', '');
-                            final catColor = _categoryColors[baseCat] ?? const Color(0xFF6C63FF);
-
-                            return ListTile(
-                              dense: true,
-                              leading: Container(
-                                width: 8,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: catColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              title: Text(
-                                name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              subtitle: muscleGroup.isNotEmpty
-                                  ? Text(
-                                      muscleGroup,
-                                      style: TextStyle(
-                                        color: catColor.withValues(alpha: 0.7),
-                                        fontSize: 11,
-                                      ),
-                                    )
-                                  : null,
-                              trailing: widget.pickMode
-                                  ? const Icon(Icons.add_circle_outline,
-                                      color: Color(0xFF6C63FF), size: 20)
-                                  : Icon(
-                                      gifUrl.isNotEmpty
-                                          ? Icons.play_circle_fill
-                                          : Icons.open_in_new,
-                                      color: const Color(0xFF00D4AA),
-                                      size: 20),
-                              onTap: () {
-                                if (widget.pickMode) {
-                                  Navigator.pop(context, name);
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ExerciseInfoScreen(
-                                        exerciseName: name,
-                                        exrxUrl: url,
-                                        gifUrl: gifUrl,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        ),
+                // Category chips
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _CategoryHeaderDelegate(
+                    categories: _categoryDefs
+                        .where((m) =>
+                            m.name == 'All' ||
+                            (_categoryCounts[m.name] ?? 0) > 0)
+                        .toList(),
+                    counts: _categoryCounts,
+                    selected: _selectedCategory,
+                    onSelect: _selectCategory,
+                  ),
                 ),
               ],
+              body: _filteredExercises.isEmpty
+                  ? _buildEmptyState()
+                  : _isGridView
+                      ? _buildGridView()
+                      : _buildListView(),
             ),
     );
+  }
+
+  Widget _buildSearchBar() {
+    return TextField(
+      controller: _searchController,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: 'Search ${_allExercises.length} exercises...',
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+        prefixIcon: Icon(Icons.search_rounded,
+            color: Colors.white.withValues(alpha: 0.35), size: 20),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear_rounded,
+                    color: Colors.white54, size: 18),
+                onPressed: () => _searchController.clear(),
+              )
+            : null,
+        filled: true,
+        fillColor: const Color(0xFF1A1A2E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded,
+              size: 56, color: Colors.white.withValues(alpha: 0.15)),
+          const SizedBox(height: 16),
+          Text(
+            'No exercises found',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try a different search or category',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.25),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  GRID VIEW - Cards with GIF thumbnails
+  // ═══════════════════════════════════════════
+  Widget _buildGridView() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.82,
+      ),
+      itemCount: _filteredExercises.length,
+      itemBuilder: (context, index) =>
+          _buildGridCard(_filteredExercises[index]),
+    );
+  }
+
+  Widget _buildGridCard(Map<String, dynamic> exercise) {
+    final name = exercise['name'] as String;
+    final gifUrl = exercise['gif_url'] as String? ?? '';
+    final muscleGroup = exercise['muscle_group'] as String? ?? '';
+    final meta = _getMeta(muscleGroup);
+
+    return GestureDetector(
+      onTap: () => _onExerciseTap(exercise),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF141420),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: meta.color.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // GIF thumbnail
+            Expanded(
+              flex: 3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(color: const Color(0xFF1A1A2E)),
+                  if (gifUrl.isNotEmpty)
+                    Image.network(
+                      gifUrl,
+                      fit: BoxFit.contain,
+                      cacheWidth: (120 * MediaQuery.devicePixelRatioOf(context)).toInt(),
+                      errorBuilder: (_, _, _) => Center(
+                        child: Icon(Icons.fitness_center_rounded,
+                            color: meta.color.withValues(alpha: 0.3),
+                            size: 36),
+                      ),
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: meta.color.withValues(alpha: 0.5),
+                              value: progress.expectedTotalBytes != null
+                                  ? progress.cumulativeBytesLoaded /
+                                      progress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Center(
+                      child: Icon(Icons.fitness_center_rounded,
+                          color: meta.color.withValues(alpha: 0.3), size: 36),
+                    ),
+                  // Category badge
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: meta.color.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        muscleGroup,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Pick mode add button
+                  if (widget.pickMode)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context, name),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6C63FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Name section
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  LIST VIEW - Compact rows with thumbnails
+  // ═══════════════════════════════════════════
+  Widget _buildListView() {
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 4, bottom: 100),
+      itemCount: _filteredExercises.length,
+      itemBuilder: (context, index) =>
+          _buildListTile(_filteredExercises[index]),
+    );
+  }
+
+  Widget _buildListTile(Map<String, dynamic> exercise) {
+    final name = exercise['name'] as String;
+    final gifUrl = exercise['gif_url'] as String? ?? '';
+    final muscleGroup = exercise['muscle_group'] as String? ?? '';
+    final meta = _getMeta(muscleGroup);
+
+    return InkWell(
+      onTap: () => _onExerciseTap(exercise),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141420),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            // GIF thumbnail (small)
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A2E),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: gifUrl.isNotEmpty
+                  ? Image.network(
+                      gifUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Center(
+                        child: Icon(Icons.fitness_center_rounded,
+                            color: meta.color.withValues(alpha: 0.4),
+                            size: 22),
+                      ),
+                    )
+                  : Center(
+                      child: Icon(Icons.fitness_center_rounded,
+                          color: meta.color.withValues(alpha: 0.4), size: 22),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            // Name + category
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: meta.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      muscleGroup,
+                      style: TextStyle(
+                        color: meta.color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Action
+            if (widget.pickMode)
+              IconButton(
+                icon: const Icon(Icons.add_circle_rounded,
+                    color: Color(0xFF6C63FF), size: 26),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () =>
+                    Navigator.pop(context, exercise['name'] as String),
+              )
+            else
+              Icon(Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(alpha: 0.25), size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  Navigation
+  // ═══════════════════════════════════════════
+  void _onExerciseTap(Map<String, dynamic> exercise) {
+    final name = exercise['name'] as String;
+    final url = exercise['url'] as String;
+    final gifUrl = exercise['gif_url'] as String? ?? '';
+
+    if (widget.pickMode) {
+      final muscleGroup = exercise['muscle_group'] as String? ?? 'Other';
+      Navigator.pop(context, {'name': name, 'muscle_group': muscleGroup});
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExerciseInfoScreen(
+          exerciseName: name,
+          exrxUrl: url,
+          gifUrl: gifUrl,
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  Category metadata
+// ═══════════════════════════════════════════════
+class _CategoryMeta {
+  final String name;
+  final IconData icon;
+  final Color color;
+  const _CategoryMeta(this.name, this.icon, this.color);
+}
+
+// ═══════════════════════════════════════════════
+//  Sticky category header delegate
+// ═══════════════════════════════════════════════
+class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final List<_CategoryMeta> categories;
+  final Map<String, int> counts;
+  final String selected;
+  final ValueChanged<String> onSelect;
+
+  const _CategoryHeaderDelegate({
+    required this.categories,
+    required this.counts,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  double get minExtent => 56;
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: const Color(0xFF0A0A0A),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+            PointerDeviceKind.trackpad,
+          },
+        ),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            final isSelected = selected == cat.name;
+            final count = counts[cat.name] ?? 0;
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => onSelect(cat.name),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? cat.color
+                        : cat.color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? cat.color
+                          : cat.color.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: cat.color.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 14,
+                        color: isSelected
+                            ? Colors.white
+                            : cat.color.withValues(alpha: 0.8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        cat.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : cat.color.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      if (cat.name != 'All') ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 0),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.25)
+                                : cat.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : cat.color.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _CategoryHeaderDelegate oldDelegate) {
+    return selected != oldDelegate.selected || counts != oldDelegate.counts;
   }
 }

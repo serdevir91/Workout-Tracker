@@ -29,13 +29,3 @@ String formatTime(DateTime date) {
   return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 }
 
-/// Calculate total volume (weight * reps) across completed sets
-double calculateTotalVolume(List<Map<String, dynamic>> sets) {
-  double total = 0;
-  for (final set in sets) {
-    if (set['completed'] == true) {
-      total += (set['weight'] as double) * (set['reps'] as int);
-    }
-  }
-  return total;
-}

@@ -3,25 +3,33 @@ import 'package:provider/provider.dart';
 import '../models/workout_plan_models.dart';
 import '../providers/workout_provider.dart';
 import 'active_workout_screen.dart';
-import '../utils/image_mapper.dart';
+import '../widgets/exercise_thumbnail.dart';
 
 class PlansScreen extends StatelessWidget {
   const PlansScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workout Plans'),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: defaultWorkoutPlans.length,
-        itemBuilder: (context, index) {
-          final plan = defaultWorkoutPlans[index];
-          return _buildPlanCard(context, plan);
-        },
-      ),
+    return Consumer<WorkoutProvider>(
+      builder: (context, provider, child) {
+        final plans = provider.workoutPlans;
+        
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Workout Plans'),
+          ),
+          body: plans.isEmpty
+              ? const Center(child: Text('No custom plans found. Create one from the Home screen!', style: TextStyle(color: Color(0xFF6B6B8D))))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: plans.length,
+                  itemBuilder: (context, index) {
+                    final plan = plans[index];
+                    return _buildPlanCard(context, plan);
+                  },
+                ),
+        );
+      },
     );
   }
 
@@ -46,11 +54,11 @@ class PlansScreen extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                'D${plan.dayNumber}',
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][plan.dayNumber - 1],
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 18,
+                  fontSize: 14,
                 ),
               ),
             ),
@@ -99,15 +107,7 @@ class PlansScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Image.asset(
-              ImageMapper.getImageForExercise(exercise.name),
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-            ),
-          ),
+          ExerciseThumbnail(exerciseName: exercise.name, size: 36),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
