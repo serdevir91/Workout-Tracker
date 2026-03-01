@@ -92,6 +92,8 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   int _restTimerSeconds = 0;
   int get restTimerSeconds => _restTimerSeconds;
   bool get isRestTimerActive => _restTimerSeconds > 0;
+  int _restTimerTotalSeconds = 0; // Total rest duration for progress calculation
+  DateTime? _restTimerStartedAt; // Wall-clock anchor for drift-proof rest countdown
 
   // ValueNotifiers for timer-only UI updates (avoids full widget tree rebuild)
   final ValueNotifier<int> elapsedSecondsNotifier = ValueNotifier(0);
@@ -153,7 +155,24 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
         _workoutElapsedSeconds = now.difference(_workoutStartedAt!).inSeconds - _totalPausedSeconds;
       }
 
-      // 2. Compensate exercise & cardio timers for missed background time
+      // 2. Recalculate rest timer from wall clock (drift-proof in background)
+      if (_restTimerStartedAt != null && _restTimerTotalSeconds > 0) {
+        final elapsed = now.difference(_restTimerStartedAt!).inSeconds;
+        final remaining = _restTimerTotalSeconds - elapsed;
+        if (remaining > 0) {
+          _restTimerSeconds = remaining;
+          restTimerNotifier.value = _restTimerSeconds;
+        } else if (_restTimerSeconds > 0) {
+          // Rest finished while app was in background
+          _restTimerSeconds = 0;
+          restTimerNotifier.value = 0;
+          _restTimerStartedAt = null;
+          _restTimerTotalSeconds = 0;
+          _notificationService.showRestFinishedNotification();
+        }
+      }
+
+      // 3. Compensate exercise & cardio timers for missed background time
       final missedSeconds = now.difference(_lastTickTime).inSeconds;
       if (missedSeconds > 1) {
         if (_activeExercises.isNotEmpty) {
@@ -313,6 +332,8 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     _workoutStartedAt = null;
     _totalPausedSeconds = 0;
     _manualPauseStartedAt = null;
+    _restTimerStartedAt = null;
+    _restTimerTotalSeconds = 0;
     elapsedSecondsNotifier.value = 0;
     restTimerNotifier.value = 0;
     exerciseTimersNotifier.value = {};
@@ -619,11 +640,25 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
             (_exerciseElapsedSeconds[exId] ?? 0) + delta;
       }
 
-      // Rest timer countdown (merged — was separate Timer.periodic)
-      if (_restTimerSeconds > 0) {
-        _restTimerSeconds--;
-        restTimerNotifier.value = _restTimerSeconds;
-        if (_restTimerSeconds <= 0) {
+      // Rest timer countdown — wall-clock based (drift-proof in background)
+      if (_restTimerStartedAt != null && _restTimerTotalSeconds > 0) {
+        final elapsed = now.difference(_restTimerStartedAt!).inSeconds;
+        final remaining = _restTimerTotalSeconds - elapsed;
+        if (remaining > 0) {
+          _restTimerSeconds = remaining;
+          restTimerNotifier.value = _restTimerSeconds;
+          // Update rest countdown notification
+          _notificationService.showRestTimerNotification(
+            remainingSeconds: _restTimerSeconds,
+            totalSeconds: _restTimerTotalSeconds,
+          );
+        } else if (_restTimerSeconds > 0) {
+          // Rest just finished — send alert
+          _restTimerSeconds = 0;
+          restTimerNotifier.value = 0;
+          _restTimerStartedAt = null;
+          _restTimerTotalSeconds = 0;
+          _notificationService.showRestFinishedNotification();
           notifyListeners(); // Notify once when rest finishes to update UI
         }
       }
@@ -642,10 +677,25 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// Update the persistent notification with current workout info.
   void _updateNotification() {
     if (_activeWorkout == null) return;
+    
+    // Gather rich info for the notification
+    int totalSets = 0;
+    String? currentExName;
+    for (var ex in _activeExercises) {
+      totalSets += ex.sets.where((s) => s.completed).length;
+      if (ex.exercise.endTime == null) {
+        currentExName = ex.exercise.name;
+      }
+    }
+    
     _notificationService.showWorkoutNotification(
       workoutName: _activeWorkout!.name,
       elapsedSeconds: _workoutElapsedSeconds,
       lastSetInfo: _lastSetInfo,
+      exerciseCount: _activeExercises.length,
+      totalSets: totalSets,
+      restTimerSeconds: _restTimerSeconds,
+      currentExerciseName: currentExName,
     );
   }
 
@@ -658,13 +708,23 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   void startRestTimer(int durationSeconds) {
     _restTimerSeconds = durationSeconds;
+    _restTimerTotalSeconds = durationSeconds;
+    _restTimerStartedAt = DateTime.now();
     restTimerNotifier.value = _restTimerSeconds;
+    // Show rest started notification
+    _notificationService.showRestTimerNotification(
+      remainingSeconds: _restTimerSeconds,
+      totalSeconds: _restTimerTotalSeconds,
+    );
     notifyListeners(); // Notify once to show rest timer UI
   }
 
   void stopRestTimer() {
     _restTimerSeconds = 0;
+    _restTimerTotalSeconds = 0;
+    _restTimerStartedAt = null;
     restTimerNotifier.value = 0;
+    _notificationService.cancelRestTimerNotification();
     notifyListeners();
   }
 

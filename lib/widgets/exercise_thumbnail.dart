@@ -70,8 +70,8 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
       return Container(
         width: widget.size,
         height: widget.size,
-        decoration: BoxDecoration(color: const Color(0xFF222222), borderRadius: BorderRadius.circular(8)),
-        child: const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00D4AA)))),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline, borderRadius: BorderRadius.circular(8)),
+        child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.secondary))),
       );
     }
 
@@ -79,8 +79,8 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
       return Container(
         width: widget.size,
         height: widget.size,
-        decoration: BoxDecoration(color: const Color(0xFF222222), borderRadius: BorderRadius.circular(8)),
-        child: Icon(Icons.fitness_center, color: const Color(0xFF6B6B8D), size: widget.size * 0.5),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline, borderRadius: BorderRadius.circular(8)),
+        child: Icon(Icons.fitness_center, color: Theme.of(context).colorScheme.onSurfaceVariant, size: widget.size * 0.5),
       );
     }
 
@@ -95,8 +95,8 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
         errorBuilder: (context, error, stackTrace) => Container(
           width: widget.size,
           height: widget.size,
-          decoration: BoxDecoration(color: const Color(0xFF222222), borderRadius: BorderRadius.circular(8)),
-          child: Icon(Icons.broken_image, color: const Color(0xFF6B6B8D), size: widget.size * 0.5),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline, borderRadius: BorderRadius.circular(8)),
+          child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurfaceVariant, size: widget.size * 0.5),
         ),
       ),
     );

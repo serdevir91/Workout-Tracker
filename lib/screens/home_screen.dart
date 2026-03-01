@@ -7,6 +7,8 @@ import '../models/workout_models.dart';
 import '../providers/workout_provider.dart';
 import '../utils/formatters.dart';
 import '../utils/exrx_url_matcher.dart';
+import '../l10n/translations.dart';
+import '../db/database_helper.dart';
 import 'active_workout_screen.dart';
 import 'workout_detail_screen.dart';
 import 'stats_screen.dart';
@@ -28,14 +30,18 @@ class _HomeScreenState extends State<HomeScreen> {
   List<double> _weeklyVolumes = [];
   List<double> _weeklyReps = [];
   List<double> _weeklySets = [];
-  String _selectedChartType = 'Volume'; // Volume, Reps, Sets
+  String _selectedChartType = 'volume'; // volume, reps, sets
   int _selectedIndex = 0;
 
   // Dashboard chart data
-  String _muscleGroupPeriod = 'All time';
-  String _caloriesPeriod = 'All time';
+  String _muscleGroupPeriod = 'all_time';
+  String _caloriesPeriod = 'all_time';
   Map<String, double> _muscleGroupData = {};
   List<Map<String, dynamic>> _caloriesData = [];
+
+  // Body progress chart data
+  String _selectedBodyStat = 'weight';
+  List<Map<String, dynamic>> _bodyProgressData = [];
 
   // Track workout count to detect changes and refresh charts
   int _lastKnownWorkoutCount = -1;
@@ -69,13 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _periodToStartDate(String period) {
     final now = DateTime.now();
     switch (period) {
-      case 'Last':
+      case 'last':
         return now.subtract(const Duration(days: 1)).toIso8601String();
-      case 'Week':
+      case 'week':
         return now.subtract(const Duration(days: 7)).toIso8601String();
-      case 'Month':
+      case 'month':
         return DateTime(now.year, now.month - 1, now.day).toIso8601String();
-      case 'All time':
+      case 'all_time':
       default:
         return null;
     }
@@ -84,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadDashboardCharts() async {
     await _loadMuscleGroupData();
     await _loadCaloriesData();
+    await _loadBodyProgressData();
     if (mounted) setState(() {});
   }
 
@@ -108,6 +115,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final startDate = _periodToStartDate(_caloriesPeriod);
     final data = await provider.getCaloriesPerWorkout(startDate);
     if (mounted) setState(() => _caloriesData = data.reversed.toList());
+  }
+
+  Future<void> _loadBodyProgressData() async {
+    final data = await DatabaseHelper().getBodyMeasurementHistory(_selectedBodyStat, limit: 20);
+    if (mounted) setState(() => _bodyProgressData = data);
   }
 
   void _startWorkoutFromPlan(BuildContext context, WorkoutPlan plan) async {
@@ -135,17 +147,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          _wrapWithScaffold('Home', _buildHomeDashboard(context), actions: [
+          _wrapWithScaffold(Translations.of(context).get('home'), _buildHomeDashboard(context), actions: [
             IconButton(
-              icon: const Icon(Icons.settings, color: Color(0xFF6C63FF)),
+              icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
             )
           ]),
-          _wrapWithScaffold('Workouts', _buildWorkoutsTabContent(context, provider)),
+          _wrapWithScaffold(Translations.of(context).get('workouts'), _buildWorkoutsTabContent(context, provider), actions: [
+            IconButton(
+              icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            )
+          ]),
           const ExerciseLibraryScreen(),
           const StatsScreen(),
         ],
@@ -156,10 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _wrapWithScaffold(String title, Widget content, {List<Widget>? actions}) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Colors.black,
         elevation: 0,
         actions: actions,
       ),
@@ -190,11 +204,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ..._buildWorkoutsForDay(provider, settings, _selectedDay!),
             ],
             const SizedBox(height: 32),
-            const Text(
-              'Next training',
+            Text(
+              Translations.of(context).get('next_training'),
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF6B6B8D),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -203,6 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
               
               const SizedBox(height: 32),
               _buildMuscleGroupChartSection(),
+
+              const SizedBox(height: 32),
+              _buildBodyProgressSection(),
 
               const SizedBox(height: 32),
               _buildChartSection(),
@@ -228,38 +245,38 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF6C63FF).withValues(alpha: 0.15),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF6C63FF).withValues(alpha: 0.4), width: 1.5),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.fitness_center, color: Color(0xFF6C63FF), size: 24),
+              child: Icon(Icons.fitness_center, color: Theme.of(context).colorScheme.primary, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Workout in progress', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(Translations.of(context).get('workout_in_progress'), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 4),
-                  Text(provider.activeWorkout!.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+                  Text(provider.activeWorkout!.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600, fontSize: 16)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.timer, size: 14, color: Color(0xFF00D4AA)),
+                      Icon(Icons.timer, size: 14, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 4),
                       ValueListenableBuilder<int>(
                         valueListenable: provider.elapsedSecondsNotifier,
-                        builder: (_, elapsed, __) => Text(
+                        builder: (_, elapsed, _) => Text(
                           formatDuration(elapsed),
-                          style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 12),
+                          style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ),
                     ],
@@ -267,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF6C63FF), size: 16),
+            Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.primary, size: 16),
           ],
         ),
       ),
@@ -286,30 +303,30 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           icon: const Icon(Icons.add, size: 20),
-          label: const Text('Add Workout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          label: Text(Translations.of(context).get('add_workout'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00D4AA),
-            foregroundColor: Colors.black,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
         const SizedBox(height: 32),
-        const Text('My Workout', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(Translations.of(context).get('my_workout'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         if (provider.workoutPlans.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Text('No routines created yet. Create one to get started!', style: TextStyle(color: Color(0xFF6B6B8D))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(Translations.of(context).get('no_routines_created'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           )
         else
           ...provider.workoutPlans.map((plan) => _buildRoutineCard(context, provider, plan)),
 
         const SizedBox(height: 32),
-        const Text('All Past Workouts', style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(Translations.of(context).get('all_past_workouts'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         if (provider.workouts.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('No workouts found', style: TextStyle(color: Color(0xFF6B6B8D)))))
+          Center(child: Padding(padding: const EdgeInsets.all(32), child: Text(Translations.of(context).get('no_workouts_found'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))))
         else
           ...provider.workouts.map((workout) => _buildWorkoutHistoryCard(context, workout)),
       ],
@@ -319,24 +336,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildRoutineCard(BuildContext context, WorkoutProvider provider, WorkoutPlan plan) {
      return Card(
        key: ValueKey('plan_${plan.id}'),
-       color: const Color(0xFF0F0F12),
+       color: Theme.of(context).colorScheme.surfaceContainerHigh,
        margin: const EdgeInsets.only(bottom: 12),
-       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFF222222))),
+       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
        child: ListTile(
          contentPadding: const EdgeInsets.all(16),
-         title: Text(plan.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-         subtitle: Text('${plan.exercises.length} exercises', style: const TextStyle(color: Color(0xFF6B6B8D))),
+         title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+         subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
          trailing: Row(
            mainAxisSize: MainAxisSize.min,
            children: [
              IconButton(
-               icon: const Icon(Icons.edit, color: Color(0xFFA0A0C0)),
+               icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurfaceVariant),
                onPressed: () {
                  Navigator.push(context, MaterialPageRoute(builder: (_) => CreateRoutineScreen(existingPlan: plan)));
                },
              ),
              IconButton(
-               icon: const Icon(Icons.play_arrow, color: Color(0xFF00D4AA)),
+               icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.secondary),
                onPressed: () => _startWorkoutFromPlan(context, plan),
              ),
            ],
@@ -358,32 +375,32 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F0F12),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF222222)),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
             children: [
                Container(
                  padding: const EdgeInsets.all(10),
                  decoration: BoxDecoration(
-                    color: const Color(0xFF00D4AA).withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                  ),
-                 child: const Icon(Icons.check_circle_outline, color: Color(0xFF00D4AA)),
+                 child: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.secondary),
                ),
                const SizedBox(width: 16),
                Expanded(
                  child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                      Text(workout.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(workout.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text(formatDate(workout.startTime), style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 13)),
+                      Text(formatDateWithTime(workout.startTime), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                    ],
                  ),
                ),
-               const Icon(Icons.chevron_right, color: Color(0xFF6B6B8D)),
+               Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ],
           ),
        ),
@@ -397,19 +414,19 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Weekly Overview',
+            Text(
+              Translations.of(context).get('weekly_overview'),
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
             Row(
               children: [
-                _buildChartTab('Volume'),
-                _buildChartTab('Reps'),
-                _buildChartTab('Sets'),
+                _buildChartTab('volume', Translations.of(context).get('volume')),
+                _buildChartTab('reps', Translations.of(context).get('reps')),
+                _buildChartTab('sets', Translations.of(context).get('sets')),
               ],
             )
           ],
@@ -420,28 +437,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildChartTab(String type) {
-    final isSelected = _selectedChartType == type;
+  Widget _buildChartTab(String key, String label) {
+    final isSelected = _selectedChartType == key;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedChartType = type;
+          _selectedChartType = key;
         });
       },
       child: Container(
         margin: const EdgeInsets.only(left: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6C63FF).withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFF333333),
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Text(
-          type,
+          label,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFF8888AA),
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
@@ -457,16 +474,22 @@ class _HomeScreenState extends State<HomeScreen> {
     String prefix = '';
     
     switch (_selectedChartType) {
-      case 'Reps':
+      case 'reps':
         activeData = _weeklyReps;
         break;
-      case 'Sets':
+      case 'sets':
         activeData = _weeklySets;
         break;
-      case 'Volume':
+      case 'volume':
       default:
-        activeData = _weeklyVolumes;
-        prefix = 'kg';
+        final settings = context.read<SettingsProvider>();
+        // Volumes are stored as kg × reps; convert to display unit
+        if (settings.measurementSystem == 'imperial') {
+          activeData = _weeklyVolumes.map((v) => settings.displayWeight(v)).toList();
+        } else {
+          activeData = _weeklyVolumes;
+        }
+        prefix = settings.unit;
         break;
     }
 
@@ -475,15 +498,16 @@ class _HomeScreenState extends State<HomeScreen> {
       if (v > maxVal) maxVal = v;
     }
 
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final t = Translations.of(context);
+    final days = [t.get('mon'), t.get('tue'), t.get('wed'), t.get('thu'), t.get('fri'), t.get('sat'), t.get('sun')];
     
     return Container(
       height: 180, // Increased height to prevent overflow
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF15151A),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF262630), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
         ],
@@ -509,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       '${val.toStringAsFixed(0)}${prefix.isNotEmpty ? ' $prefix' : ''}',
                       style: TextStyle(
-                        color: isToday ? const Color(0xFF6C63FF) : const Color(0xFF00D4AA), 
+                        color: isToday ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary, 
                         fontSize: 9, 
                         fontWeight: FontWeight.bold
                       ),
@@ -528,8 +552,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: isToday 
-                            ? [const Color(0xFF8338EC), const Color(0xFF6C63FF)]
-                            : [const Color(0xFF00D4AA), const Color(0xFF00A383)],
+                            ? [const Color(0xFF8338EC), Theme.of(context).colorScheme.primary]
+                            : [Theme.of(context).colorScheme.secondary, const Color(0xFF00A383)],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -542,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isToday ? Colors.white : const Color(0xFF6B6B8D),
+                    color: isToday ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                   ),
@@ -584,13 +608,13 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Muscle groups',
-              style: TextStyle(fontSize: 16, color: Color(0xFF00D4AA), fontWeight: FontWeight.w600),
+            Text(
+              Translations.of(context).get('muscle_groups'),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
             ),
             GestureDetector(
               onTap: () => setState(() => _selectedIndex = 3),
-              child: const Text('More', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.w600)),
+              child: Text(Translations.of(context).get('more'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -601,34 +625,35 @@ class _HomeScreenState extends State<HomeScreen> {
         }),
         const SizedBox(height: 16),
         _muscleGroupData.isEmpty
-            ? _buildEmptyChartPlaceholder('No workout data yet')
+            ? _buildEmptyChartPlaceholder(Translations.of(context).get('no_workout_data_yet'))
             : _buildDonutChart(_muscleGroupData, _muscleColors),
       ],
     );
   }
 
   Widget _buildPeriodSelector(String selected, ValueChanged<String> onSelect) {
-    const periods = ['Last', 'Week', 'Month', 'All time'];
+    final t = Translations.of(context);
+    final periodKeys = ['last', 'week', 'month', 'all_time'];
     return Row(
-      children: periods.map((p) {
-        final isSelected = selected == p;
+      children: periodKeys.map((key) {
+        final isSelected = selected == key;
         return Padding(
           padding: const EdgeInsets.only(right: 8),
           child: GestureDetector(
-            onTap: () => onSelect(p),
+            onTap: () => onSelect(key),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.transparent : const Color(0xFF111111),
+                color: isSelected ? Colors.transparent : Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFF333333),
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Text(
-                p,
+                t.get(key),
                 style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF8888AA),
+                  color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -640,9 +665,207 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  //  BODY PROGRESS - Line Chart with measurement selector
+  // ═══════════════════════════════════════════════════════════
+
+  static const Map<String, String> _bodyStatKeys = {
+    'weight': 'weight',
+    'arm_circumference': 'arm_circumference',
+    'waist_circumference': 'waist_circumference',
+    'shoulder_width': 'shoulder_width',
+    'chest_circumference': 'chest_circumference',
+    'hip_circumference': 'hip_circumference',
+    'thigh_circumference': 'thigh_circumference',
+    'calf_circumference': 'calf_circumference',
+    'neck_circumference': 'neck_circumference',
+    'forearm_circumference': 'forearm_circumference',
+  };
+
+  Widget _buildBodyProgressSection() {
+    final settings = context.read<SettingsProvider>();
+    final t = Translations(settings.language);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              t.get('body_progress'),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+            ),
+            GestureDetector(
+              onTap: () => _showBodyStatPicker(context, settings),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      t.get(_selectedBodyStat),
+                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_bodyProgressData.isEmpty || _bodyProgressData.length < 2)
+          _buildEmptyChartPlaceholder(t.get('no_measurements_yet'))
+        else
+          _buildBodyProgressChart(settings),
+        const SizedBox(height: 10),
+        // Quick update button
+        Center(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit, color: Theme.of(context).colorScheme.primary, size: 16),
+                  const SizedBox(width: 6),
+                  Text(t.get('update_measurements'), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showBodyStatPicker(BuildContext context, SettingsProvider settings) {
+    final t = Translations(settings.language);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.85,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2)),
+              ),
+              Text(t.get('select_measurement'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    ..._bodyStatKeys.entries.map((entry) {
+                      final isSelected = _selectedBodyStat == entry.key;
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          title: Text(t.get(entry.key), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                          trailing: isSelected ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.secondary, size: 20) : null,
+                          onTap: () {
+                            setState(() => _selectedBodyStat = entry.key);
+                            _loadBodyProgressData();
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBodyProgressChart(SettingsProvider settings) {
+    final isWeight = _selectedBodyStat == 'weight';
+
+    // Convert values for display
+    final displayData = _bodyProgressData.map((d) {
+      final rawValue = (d['value'] as num?)?.toDouble() ?? 0;
+      final displayValue = isWeight
+          ? settings.displayWeight(rawValue)
+          : settings.displayLength(rawValue);
+      return {'date': d['date'], 'value': displayValue};
+    }).toList();
+
+    double maxVal = 10;
+    double minVal = double.infinity;
+    for (final d in displayData) {
+      final v = (d['value'] as num).toDouble();
+      if (v > maxVal) maxVal = v;
+      if (v < minVal) minVal = v;
+    }
+    if (minVal == double.infinity) minVal = 0;
+    final range = maxVal - minVal;
+    final yMin = (minVal - range * 0.1).clamp(0.0, double.infinity);
+    final yMax = maxVal + range * 0.1;
+
+    final unitLabel = isWeight ? settings.unit : settings.lengthUnit;
+
+    return Container(
+      height: 200,
+      padding: const EdgeInsets.fromLTRB(8, 20, 16, 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+      ),
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _BodyProgressPainter(
+          data: displayData,
+          yMin: yMin,
+          yMax: yMax,
+          unitLabel: unitLabel,
+          gridColor: Theme.of(context).colorScheme.outlineVariant,
+          labelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDonutChart(Map<String, double> data, Map<String, Color> colorMap) {
     final total = data.values.fold(0.0, (a, b) => a + b);
-    if (total == 0) return _buildEmptyChartPlaceholder('No data');
+    if (total == 0) return _buildEmptyChartPlaceholder(Translations.of(context).get('no_data'));
 
     // Sort by value descending, take top groups
     final sorted = data.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
@@ -663,9 +886,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF15151A),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF262630), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
       ),
       child: Column(
         children: [
@@ -684,15 +907,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       total.toStringAsFixed(0),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text(
-                      'sets',
-                      style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 12),
+                    Text(
+                      Translations.of(context).get('sets_label'),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ],
                 ),
@@ -718,7 +941,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 6),
                 Text(
                   '${s.label} ${s.percentage.toStringAsFixed(1)}%',
-                  style: const TextStyle(color: Color(0xFFA0A0C0), fontSize: 12),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                 ),
               ],
             )).toList(),
@@ -739,13 +962,13 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Calories burned, kcal',
-              style: TextStyle(fontSize: 16, color: Color(0xFF00D4AA), fontWeight: FontWeight.w600),
+            Text(
+              Translations.of(context).get('calories_burned'),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
             ),
             GestureDetector(
               onTap: () => setState(() => _selectedIndex = 3),
-              child: const Text('More', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.w600)),
+              child: Text(Translations.of(context).get('more'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -756,7 +979,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }),
         const SizedBox(height: 16),
         _caloriesData.isEmpty
-            ? _buildEmptyChartPlaceholder('No calorie data yet')
+            ? _buildEmptyChartPlaceholder(Translations.of(context).get('no_calorie_data_yet'))
             : _buildCaloriesChart(),
       ],
     );
@@ -771,9 +994,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 20, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF15151A),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF262630), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
       ),
       child: SizedBox(
         height: 180,
@@ -782,6 +1005,8 @@ class _HomeScreenState extends State<HomeScreen> {
           painter: _CaloriesChartPainter(
             data: _caloriesData,
             yMax: yMax,
+            gridColor: Theme.of(context).colorScheme.outlineVariant,
+            labelColor: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -792,12 +1017,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       height: 150,
       decoration: BoxDecoration(
-        color: const Color(0xFF15151A),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF262630), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
       ),
       child: Center(
-        child: Text(message, style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 14)),
+        child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
       ),
     );
   }
@@ -809,23 +1034,24 @@ class _HomeScreenState extends State<HomeScreen> {
        return [
          Container(
            padding: const EdgeInsets.all(16),
-           decoration: BoxDecoration(color: const Color(0xFF15151A), borderRadius: BorderRadius.circular(16)),
-           child: const Center(child: Text("No routines created. Tap 'Workouts' tab to create.", style: TextStyle(color: Color(0xFF6B6B8D)))),
+           decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
+           child: Center(child: Text(Translations.of(context).get('no_routines'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
          )
        ];
     }
     
     return plans.map((plan) {
-      final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      final t = Translations.of(context);
+      final days = [t.get('monday'), t.get('tuesday'), t.get('wednesday'), t.get('thursday'), t.get('friday'), t.get('saturday'), t.get('sunday')];
       return GestureDetector(
         onTap: () => _startWorkoutFromPlan(context, plan),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F0F12),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF222222)),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
             children: [
@@ -836,14 +1062,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFF6C63FF).withValues(alpha: 0.5),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     width: 2,
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.play_arrow,
-                    color: Color(0xFF6C63FF),
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24,
                   ),
                 ),
@@ -855,9 +1081,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.autoPositioning ? 'Auto Scheduled' : 'Every ${days[plan.dayNumber - 1]}',
-                      style: const TextStyle(
-                        color: Color(0xFF6B6B8D),
+                      settings.autoPositioning ? t.get('auto_scheduled') : '${t.get('every')} ${days[plan.dayNumber - 1]}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -865,8 +1091,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       plan.name.toLowerCase().replaceAll(' ', '+'),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -878,8 +1104,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00D4AA),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -926,26 +1152,26 @@ class _HomeScreenState extends State<HomeScreen> {
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
-        leftChevronIcon: const Icon(Icons.arrow_back, color: Color(0xFF00D4AA), size: 20),
-        rightChevronIcon: const Icon(Icons.arrow_forward, color: Color(0xFF00D4AA), size: 20),
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+        leftChevronIcon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary, size: 20),
+        rightChevronIcon: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.secondary, size: 20),
+        titleTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
       ),
-      daysOfWeekStyle: const DaysOfWeekStyle(
-        weekdayStyle: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600),
-        weekendStyle: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600),
+      daysOfWeekStyle: DaysOfWeekStyle(
+        weekdayStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+        weekendStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
       ),
       calendarStyle: CalendarStyle(
-        defaultTextStyle: const TextStyle(color: Colors.white, fontSize: 16),
-        weekendTextStyle: const TextStyle(color: Colors.white, fontSize: 16),
-        outsideTextStyle: const TextStyle(color: Color(0xFF333333)),
-        todayDecoration: const BoxDecoration(
-          color: Color(0xFF222222),
+        defaultTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
+        weekendTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
+        outsideTextStyle: TextStyle(color: Theme.of(context).colorScheme.outlineVariant),
+        todayDecoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.outline,
           shape: BoxShape.circle,
         ),
         selectedDecoration: BoxDecoration(
-          color: const Color(0xFF00D4AA).withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFF00D4AA)),
+          border: Border.all(color: Theme.of(context).colorScheme.secondary),
         ),
       ),
       calendarBuilders: CalendarBuilders(
@@ -960,7 +1186,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               '${date.day}',
               style: TextStyle(
-                color: hasPlan ? const Color(0xFF00D4AA) : Colors.white,
+                color: hasPlan ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
                 fontWeight: hasPlan ? FontWeight.bold : FontWeight.normal,
                 fontSize: 16,
               ),
@@ -971,9 +1197,9 @@ class _HomeScreenState extends State<HomeScreen> {
           return Center(
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF6C63FF), width: 1.5),
+                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5),
               ),
               margin: const EdgeInsets.all(6.0),
               width: 35,
@@ -981,7 +1207,7 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: Text(
                 '${day.day}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
               ),
             ),
           );
@@ -995,12 +1221,12 @@ class _HomeScreenState extends State<HomeScreen> {
           if (workouts.isNotEmpty) {
             final w = workouts.first;
             if (w.completionPercentage >= 100.0) {
-              markers.add(const Icon(Icons.check_circle, size: 14, color: Color(0xFF00D4AA)));
+              markers.add(Icon(Icons.check_circle, size: 14, color: Theme.of(context).colorScheme.secondary));
             } else {
-              markers.add(Text('${w.completionPercentage.toInt()}%', style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 10, fontWeight: FontWeight.bold)));
+              markers.add(Text('${w.completionPercentage.toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 10, fontWeight: FontWeight.bold)));
             }
           } else if (!isOff && plans.isNotEmpty && date.isAfter(DateTime.now().subtract(const Duration(days: 1)))) {
-            markers.add(const Icon(Icons.fitness_center, size: 12, color: Color(0xFF6B6B8D)));
+            markers.add(Icon(Icons.fitness_center, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant));
           }
           
           if (markers.isNotEmpty) {
@@ -1037,10 +1263,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
             },
             icon: const Icon(Icons.play_arrow),
-            label: const Text('Start Free Workout Now'),
+            label: Text(Translations.of(context).get('start_free_workout')),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
          )
       );
@@ -1048,17 +1274,17 @@ class _HomeScreenState extends State<HomeScreen> {
     
     if (!isOffDay && plannedRoutines.isNotEmpty) {
        children.add(const SizedBox(height: 16));
-       children.add(const Text('Scheduled Routines', style: TextStyle(color: Color(0xFFA0A0C0), fontSize: 13, fontWeight: FontWeight.bold)));
+       children.add(Text(Translations.of(context).get('scheduled_routines'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold)));
        children.add(const SizedBox(height: 8));
        children.addAll(plannedRoutines.map((plan) => Card(
-          color: const Color(0xFF15151A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFF6C63FF), width: 1)),
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1)),
           child: ListTile(
-             leading: const Icon(Icons.assignment, color: Color(0xFF6C63FF)),
-             title: Text(plan.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-             subtitle: Text('${plan.exercises.length} exercises', style: const TextStyle(color: Color(0xFF6B6B8D))),
+             leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.primary),
+             title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+             subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
              trailing: IconButton(
-                icon: const Icon(Icons.play_arrow, color: Color(0xFF00D4AA)),
+                icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.secondary),
                 onPressed: () => _startWorkoutFromPlan(context, plan),
              ),
           ),
@@ -1067,23 +1293,23 @@ class _HomeScreenState extends State<HomeScreen> {
     
     if (workouts.isNotEmpty) {
        children.add(const SizedBox(height: 16));
-       children.add(const Text('Completed Workouts', style: TextStyle(color: Color(0xFFA0A0C0), fontSize: 13, fontWeight: FontWeight.bold)));
+       children.add(Text(Translations.of(context).get('completed_workouts'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold)));
        children.add(const SizedBox(height: 8));
       children.addAll(workouts.map((workout) {
         return Card(
-          color: const Color(0xFF111111),
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Color(0xFF222222)),
+            side: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
           child: ListTile(
-            leading: const Icon(Icons.check_circle, color: Color(0xFF00D4AA)),
-            title: Text(workout.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            leading: Icon(Icons.check_circle, color: Theme.of(context).colorScheme.secondary),
+            title: Text(workout.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
             subtitle: Text(
               '${formatDate(workout.startTime)} • ${formatDuration(workout.totalDuration)}',
-              style: const TextStyle(color: Color(0xFFA0A0C0), fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
-            trailing: const Icon(Icons.chevron_right, color: Color(0xFF6B6B8D)),
+            trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => WorkoutDetailScreen(workoutId: workout.id!)),
@@ -1092,14 +1318,14 @@ class _HomeScreenState extends State<HomeScreen> {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  backgroundColor: const Color(0xFF1A1A2E),
-                  title: const Text('Delete', style: TextStyle(color: Colors.white)),
-                  content: Text('Delete "${workout.name}" workout?',
-                      style: const TextStyle(color: Color(0xFFA0A0C0))),
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  title: Text(Translations.of(context).get('delete'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  content: Text(Translations.of(context).get('delete_workout_confirm'),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
+                      child: Text(Translations.of(context).get('cancel')),
                     ),
                     TextButton(
                       onPressed: () {
@@ -1109,7 +1335,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         });
                         Navigator.pop(ctx);
                       },
-                      child: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B))),
+                      child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
                     ),
                   ],
                 ),
@@ -1120,10 +1346,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList());
     } else if (isOffDay) {
        children.add(
-         const Center(
+         Center(
            child: Padding(
-             padding: EdgeInsets.all(16.0),
-             child: Text('Rest Day 😌', style: TextStyle(color: Color(0xFF00D4AA), fontSize: 16, fontWeight: FontWeight.bold)),
+             padding: const EdgeInsets.all(16.0),
+             child: Text(Translations.of(context).get('rest_day'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 16, fontWeight: FontWeight.bold)),
            ),
          )
        );
@@ -1134,47 +1360,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomNav() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: Color(0xFF222222), width: 0.5)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 0.5)),
       ),
       child: BottomNavigationBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF00D4AA),
-        unselectedItemColor: const Color(0xFF6B6B8D),
+        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         showUnselectedLabels: true,
         selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Padding(
+            icon: const Padding(
               padding: EdgeInsets.only(bottom: 4),
               child: Icon(Icons.home_filled),
             ),
-            label: 'Home',
+            label: Translations.of(context).get('home'),
           ),
           BottomNavigationBarItem(
-            icon: Padding(
+            icon: const Padding(
               padding: EdgeInsets.only(bottom: 4),
               child: Icon(Icons.fitness_center),
             ),
-            label: 'Workouts',
+            label: Translations.of(context).get('workouts'),
           ),
           BottomNavigationBarItem(
-            icon: Padding(
+            icon: const Padding(
               padding: EdgeInsets.only(bottom: 4),
               child: Icon(Icons.menu_book_rounded),
             ),
-            label: 'Library',
+            label: Translations.of(context).get('library'),
           ),
           BottomNavigationBarItem(
-            icon: Padding(
+            icon: const Padding(
               padding: EdgeInsets.only(bottom: 4),
               child: Icon(Icons.bar_chart),
             ),
-            label: 'Stats',
+            label: Translations.of(context).get('stats'),
           ),
         ],
         onTap: (index) {
@@ -1308,8 +1534,10 @@ class _DonutPainter extends CustomPainter {
 class _CaloriesChartPainter extends CustomPainter {
   final List<Map<String, dynamic>> data;
   final double yMax;
+  final Color gridColor;
+  final Color labelColor;
 
-  _CaloriesChartPainter({required this.data, required this.yMax});
+  _CaloriesChartPainter({required this.data, required this.yMax, required this.gridColor, required this.labelColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1322,7 +1550,7 @@ class _CaloriesChartPainter extends CustomPainter {
 
     // Draw Y axis gridlines
     final gridPaint = Paint()
-      ..color = const Color(0xFF333333)
+      ..color = gridColor
       ..strokeWidth = 0.5;
 
     final ySteps = 4;
@@ -1334,7 +1562,7 @@ class _CaloriesChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 10),
+          style: TextStyle(color: labelColor, fontSize: 10),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -1421,6 +1649,171 @@ class _CaloriesChartPainter extends CustomPainter {
     if (oldDelegate.data.length != data.length) return true;
     for (int i = 0; i < data.length; i++) {
       if (oldDelegate.data[i]['calories'] != data[i]['calories']) return true;
+    }
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Body Progress Line Chart Painter
+// ═══════════════════════════════════════════════════════════
+
+class _BodyProgressPainter extends CustomPainter {
+  final List<Map<String, dynamic>> data;
+  final double yMin;
+  final double yMax;
+  final String unitLabel;
+  final Color gridColor;
+  final Color labelColor;
+
+  _BodyProgressPainter({
+    required this.data,
+    required this.yMin,
+    required this.yMax,
+    required this.unitLabel,
+    required this.gridColor,
+    required this.labelColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
+
+    final leftPad = 44.0;
+    final bottomPad = 28.0;
+    final topPad = 14.0;
+    final rightPad = 16.0;
+    final chartWidth = size.width - leftPad - rightPad;
+    final chartHeight = size.height - bottomPad - topPad;
+    final yRange = (yMax - yMin).clamp(0.01, double.infinity);
+
+    // Y-axis gridlines
+    const ySteps = 4;
+    final gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 0.5;
+
+    for (int i = 0; i <= ySteps; i++) {
+      final y = topPad + chartHeight - (chartHeight * i / ySteps);
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - rightPad, y), gridPaint);
+
+      final val = yMin + yRange * i / ySteps;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: val.toStringAsFixed(1),
+          style: TextStyle(color: labelColor, fontSize: 9),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(leftPad - tp.width - 6, y - tp.height / 2));
+    }
+
+    // Unit label at top-left
+    final unitTp = TextPainter(
+      text: TextSpan(
+        text: unitLabel,
+        style: TextStyle(color: labelColor, fontSize: 9, fontStyle: FontStyle.italic),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    unitTp.paint(canvas, Offset(leftPad - unitTp.width - 6, topPad - unitTp.height - 2));
+
+    // Compute points
+    final itemWidth = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+    final points = <Offset>[];
+    for (int i = 0; i < data.length; i++) {
+      final v = (data[i]['value'] as num).toDouble();
+      final x = leftPad + (data.length > 1 ? i * itemWidth : chartWidth / 2);
+      final y = topPad + chartHeight - ((v - yMin) / yRange * chartHeight).clamp(0, chartHeight);
+      points.add(Offset(x, y));
+    }
+
+    // Gradient fill under the line
+    if (points.length >= 2) {
+      final fillPath = Path()..moveTo(points.first.dx, topPad + chartHeight);
+      for (final pt in points) {
+        fillPath.lineTo(pt.dx, pt.dy);
+      }
+      fillPath.lineTo(points.last.dx, topPad + chartHeight);
+      fillPath.close();
+
+      final gradient = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF8338EC).withValues(alpha: 0.25),
+          const Color(0xFF8338EC).withValues(alpha: 0.0),
+        ],
+      );
+      final rect = Rect.fromLTWH(leftPad, topPad, chartWidth, chartHeight);
+      final fillPaint = Paint()..shader = gradient.createShader(rect);
+      canvas.drawPath(fillPath, fillPaint);
+    }
+
+    // Line
+    if (points.length >= 2) {
+      final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+      for (int i = 1; i < points.length; i++) {
+        // Smooth curve with cubic bezier
+        final prev = points[i - 1];
+        final curr = points[i];
+        final cpx = (prev.dx + curr.dx) / 2;
+        linePath.cubicTo(cpx, prev.dy, cpx, curr.dy, curr.dx, curr.dy);
+      }
+      canvas.drawPath(
+        linePath,
+        Paint()
+          ..color = const Color(0xFF8338EC)
+          ..strokeWidth = 2.5
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // Dots + value labels
+    for (int i = 0; i < points.length; i++) {
+      final pt = points[i];
+      final v = (data[i]['value'] as num).toDouble();
+
+      // Outer glow
+      canvas.drawCircle(pt, 6, Paint()..color = const Color(0xFF8338EC).withValues(alpha: 0.25));
+      // Dot
+      canvas.drawCircle(pt, 4, Paint()..color = const Color(0xFF8338EC));
+      canvas.drawCircle(pt, 2.5, Paint()..color = Colors.white);
+
+      // Value bubble above dot
+      final valText = v.toStringAsFixed(1);
+      final tp = TextPainter(
+        text: TextSpan(
+          text: valText,
+          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      final bgRect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(pt.dx, pt.dy - 16), width: tp.width + 10, height: tp.height + 6),
+        const Radius.circular(6),
+      );
+      canvas.drawRRect(bgRect, Paint()..color = const Color(0xFF8338EC));
+      tp.paint(canvas, Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2));
+
+      // Date label below x-axis
+      final dateStr = (data[i]['date'] as String?)?.substring(5) ?? '';  // MM-DD
+      final dateTp = TextPainter(
+        text: TextSpan(text: dateStr, style: TextStyle(color: labelColor, fontSize: 8)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      dateTp.paint(canvas, Offset(pt.dx - dateTp.width / 2, topPad + chartHeight + 6));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BodyProgressPainter oldDelegate) {
+    if (oldDelegate.yMin != yMin || oldDelegate.yMax != yMax) return true;
+    if (oldDelegate.data.length != data.length) return true;
+    for (int i = 0; i < data.length; i++) {
+      if (oldDelegate.data[i]['value'] != data[i]['value']) return true;
     }
     return false;
   }

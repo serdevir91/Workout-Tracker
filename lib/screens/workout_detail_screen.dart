@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
+import '../providers/settings_provider.dart';
+import '../l10n/translations.dart';
 import '../utils/exrx_url_matcher.dart';
 import '../utils/formatters.dart';
 import '../widgets/exercise_thumbnail.dart';
@@ -31,7 +33,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     if (!mounted) return;
 
     // Build cardio map for all exercises using library muscle_group
-    final exercises = data?['exercises'] as List<Map<String, dynamic>>? ?? [];
+    final exercises = data['exercises'] as List<Map<String, dynamic>>? ?? [];
     final cardioMap = <String, bool>{};
     for (final exData in exercises) {
       final name = exData['exercise'].name as String;
@@ -52,17 +54,15 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF00D4AA))),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary)),
       );
     }
 
     if (_data == null || _data!['workout'] == null) {
       return Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(title: const Text('Workout Details'), backgroundColor: Colors.black),
-        body: const Center(child: Text('Workout not found', style: TextStyle(color: Colors.white))),
+        appBar: AppBar(title: Text(Translations.of(context).get('workout_details'))),
+        body: Center(child: Text('Workout not found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
       );
     }
 
@@ -70,10 +70,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     final exercises = _data!['exercises'] as List<Map<String, dynamic>>;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(workout.name),
-        backgroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(
@@ -82,9 +80,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  backgroundColor: const Color(0xFF1A1A2E),
-                  title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
-                  content: Text('Are you sure you want to delete "${workout.name}"? This action cannot be undone.', style: const TextStyle(color: Color(0xFFA0A0C0))),
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  title: Text('Delete Workout', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  content: Text('Are you sure you want to delete "${workout.name}"? This action cannot be undone.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                     TextButton(
@@ -107,9 +105,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
         children: [
           _buildSummaryCard(workout),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Exercises',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 12),
           ...exercises.map((exData) => _buildExerciseCard(exData)),
@@ -123,20 +121,20 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     final calories = workout.calories ?? 0;
     
     return Card(
-      color: const Color(0xFF0F0F12),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF222222))),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildSummaryColumn('Date', formatDate(workout.startTime), Icons.calendar_today, const Color(0xFF6C63FF)),
-            _buildSummaryColumn('Time', formatTime(workout.startTime), Icons.access_time, const Color(0xFF00D4AA)),
-            _buildSummaryColumn('Duration', formatDuration(duration), Icons.timer, const Color(0xFF00A383)),
+            Expanded(child: _buildSummaryColumn('Date', formatShortDate(workout.startTime), Icons.calendar_today, Theme.of(context).colorScheme.primary)),
+            Expanded(child: _buildSummaryColumn('Time', formatTime(workout.startTime), Icons.access_time, Theme.of(context).colorScheme.secondary)),
+            Expanded(child: _buildSummaryColumn('Duration', formatDuration(duration), Icons.timer, Theme.of(context).colorScheme.secondary)),
             if (calories > 0)
-              _buildSummaryColumn('Calories', '${calories.toInt()}', Icons.local_fire_department, Colors.orange),
+              Expanded(child: _buildSummaryColumn('Calories', '${calories.toInt()}', Icons.local_fire_department, Colors.orange)),
           ],
         ),
       ),
@@ -146,11 +144,11 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   Widget _buildSummaryColumn(String label, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 6),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 12)),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
       ],
     );
   }
@@ -172,10 +170,10 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     }
 
     return Card(
-      color: const Color(0xFF111111),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF222222))),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline)),
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -193,27 +191,27 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       Expanded(
                         child: Text(
                           exercise.name,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
                     ],
                   ),
                 ),
                 Text(
-                  isCardio ? '$totalDuration min' : '${volume.toStringAsFixed(0)} kg',
-                  style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 14),
+                  isCardio ? '$totalDuration min' : context.read<SettingsProvider>().formatWeight(volume),
+                  style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             if (sets.isEmpty)
-              const Text('No sets completed', style: TextStyle(color: Color(0xFF6B6B8D), fontStyle: FontStyle.italic))
+              Text('No sets completed', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic))
             else
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F0F12),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF222222)),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   children: [
@@ -222,28 +220,28 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       child: Row(
                         children: [
                           if (isCardio) ...[
-                            const Expanded(flex: 1, child: Text('#', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
-                            const Expanded(flex: 2, child: Text('Duration', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                            Expanded(flex: 1, child: Text('#', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 12))),
+                            Expanded(flex: 2, child: Text('Duration', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 12))),
                           ] else ...[
-                            const Expanded(flex: 1, child: Text('Set', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
-                            const Expanded(flex: 2, child: Text('Weight', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
-                            const Expanded(flex: 2, child: Text('Reps', style: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600, fontSize: 12))),
+                            Expanded(flex: 1, child: Text('Set', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 12))),
+                            Expanded(flex: 2, child: Text('Weight', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 12))),
+                            Expanded(flex: 2, child: Text('Reps', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 12))),
                           ],
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFF222222)),
+                    Divider(height: 1, color: Theme.of(context).colorScheme.outline),
                     ...sets.map((s) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
                           if (isCardio) ...[
-                            Expanded(flex: 1, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                            Expanded(flex: 2, child: Text('${s.reps} min', style: const TextStyle(color: Colors.white))),
+                            Expanded(flex: 1, child: Text('${s.setNumber}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
+                            Expanded(flex: 2, child: Text('${s.reps} min', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                           ] else ...[
-                            Expanded(flex: 1, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                            Expanded(flex: 2, child: Text('${s.weight} kg', style: const TextStyle(color: Colors.white))),
-                            Expanded(flex: 2, child: Text('${s.reps}', style: const TextStyle(color: Colors.white))),
+                            Expanded(flex: 1, child: Text('${s.setNumber}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
+                            Expanded(flex: 2, child: Text(context.read<SettingsProvider>().formatWeight(s.weight), style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                            Expanded(flex: 2, child: Text('${s.reps}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                           ],
                         ],
                       ),

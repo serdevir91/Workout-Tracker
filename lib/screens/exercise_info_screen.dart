@@ -170,7 +170,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Duration saved: $mins min'),
-          backgroundColor: const Color(0xFF00D4AA),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -181,7 +181,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     final reps = int.tryParse(_repsController.text) ?? 0;
     if (reps <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter reps'), backgroundColor: Color(0xFF333355)),
+        SnackBar(content: Text('Please enter reps'), backgroundColor: Theme.of(context).colorScheme.surfaceContainer),
       );
       return;
     }
@@ -196,7 +196,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Set added: ${weight > 0 ? "${weight}kg" : "BW"} × $reps reps'),
-        backgroundColor: const Color(0xFF00D4AA),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -221,20 +221,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         final int setsDone = currentSets.length;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0A0A0A),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF0A0A0A),
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+              icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               '${widget.targetSets > 0 ? "$setsDone/${widget.targetSets}" : (setsDone > 0 ? "$setsDone" : "")} ${widget.exerciseName}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -243,9 +241,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                 Container(
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A2E),
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF2D2D5E)),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.close, color: Color(0xFFFF6B6B), size: 18),
@@ -277,10 +275,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                           children: [
                             Text(
                               widget.exerciseName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             if (!isInteractive) ...[
@@ -291,13 +289,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                                     'Tap on ExRx.net for full details',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white.withValues(alpha: 0.5),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Icon(Icons.info_outline,
                                       size: 16,
-                                      color: Colors.white.withValues(alpha: 0.4)),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
                                 ],
                               ),
                             ],
@@ -310,7 +308,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       // ── 3 Metric Circles (Reps / Rest / Sets) ──────────
                       ValueListenableBuilder<int>(
                         valueListenable: provider.restTimerNotifier,
-                        builder: (_, __, ___) => _buildMetricCircles(provider, setsDone, currentSets),
+                        builder: (_, _, _) => _buildMetricCircles(provider, setsDone, currentSets),
                       ),
 
                       const SizedBox(height: 20),
@@ -328,7 +326,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                             child: Text(
                               'Add comment',
                               style: TextStyle(
-                                color: const Color(0xFF00D4AA),
+                                color: Theme.of(context).colorScheme.secondary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -340,20 +338,20 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                             child: TextField(
                               controller: _commentController,
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                               maxLines: 2,
                               decoration: InputDecoration(
                                 hintText: 'Optional note for this set...',
-                                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                                 filled: true,
-                                fillColor: const Color(0xFF111111),
+                                fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Color(0xFF222222)),
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Color(0xFF222222)),
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                                 ),
                               ),
                             ),
@@ -395,7 +393,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return Container(
-                  color: const Color(0xFF111111),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -405,13 +403,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                               ? loadingProgress.cumulativeBytesLoaded /
                                   loadingProgress.expectedTotalBytes!
                               : null,
-                          color: const Color(0xFF00D4AA),
+                          color: Theme.of(context).colorScheme.secondary,
                           strokeWidth: 2,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Loading...',
-                          style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 12),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                         ),
                       ],
                     ),
@@ -428,15 +426,15 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
   Widget _buildNoGifPlaceholder() {
     return Container(
-      color: const Color(0xFF111111),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.fitness_center, size: 64, color: Colors.white.withValues(alpha: 0.1)),
+          Icon(Icons.fitness_center, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2)),
           const SizedBox(height: 12),
           Text(
             'No animation available',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 14),
           ),
         ],
       ),
@@ -459,7 +457,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               child: _buildCircleMetric(
                 label: 'Duration',
                 value: elapsed > 0 ? '${elapsed ~/ 60}m' : '–',
-                color: isTimerRunning ? const Color(0xFF00D4AA) : const Color(0xFF6B6B8D),
+                color: isTimerRunning ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurfaceVariant,
                 progress: isTimerRunning ? 1.0 : 0.0,
                 isActive: isTimerRunning,
               ),
@@ -468,7 +466,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               child: _buildCircleMetric(
                 label: 'Status',
                 value: isTimerRunning ? '⏱️' : '⏸️',
-                color: isTimerRunning ? const Color(0xFF00D4AA) : const Color(0xFF6B6B8D),
+                color: isTimerRunning ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurfaceVariant,
                 progress: isTimerRunning ? 1.0 : 0.0,
                 isActive: isTimerRunning,
               ),
@@ -477,7 +475,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               child: _buildCircleMetric(
                 label: 'Entries\nsaved',
                 value: setsDone > 0 ? '$setsDone' : '0',
-                color: const Color(0xFF00D4AA),
+                color: Theme.of(context).colorScheme.secondary,
                 progress: setsDone > 0 ? 1.0 : 0.0,
               ),
             ),
@@ -521,7 +519,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             child: _buildCircleMetric(
               label: 'Repeats\nrequired',
               value: displayReps > 0 ? '$displayReps' : '–',
-              color: const Color(0xFF00D4AA),
+              color: Theme.of(context).colorScheme.secondary,
               progress: displayReps > 0 ? 1.0 : 0.0,
             ),
           ),
@@ -529,7 +527,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             child: _buildCircleMetric(
               label: 'Rest',
               value: restDisplay,
-              color: restActive ? const Color(0xFF6C63FF) : const Color(0xFF00D4AA),
+              color: restActive ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
               progress: restActive ? (restSecs / maxRestSecs).clamp(0.0, 1.0) : 0.8,
               isActive: restActive,
             ),
@@ -538,7 +536,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             child: _buildCircleMetric(
               label: inputWeight > 0 ? '${inputWeight.toStringAsFixed(inputWeight == inputWeight.toInt() ? 0 : 1)} kg' : setsLabel,
               value: setsDone > 0 ? '$setsDone' : '0',
-              color: const Color(0xFF00D4AA),
+              color: Theme.of(context).colorScheme.secondary,
               progress: setsDone > 0 ? (setsDone / (setsDone + 1)).clamp(0.0, 1.0) : 0.0,
             ),
           ),
@@ -569,7 +567,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                 child: CircularProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
                   strokeWidth: 5,
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     isActive ? color : color.withValues(alpha: 0.8),
                   ),
@@ -580,7 +578,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                 style: TextStyle(
                   fontSize: value.length > 4 ? 14 : 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -593,7 +591,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             height: 1.3,
           ),
         ),
@@ -614,9 +612,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333)),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Row(
                 children: [
@@ -629,19 +627,19 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         setState(() {});
                       },
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
                         hintText: 'kg',
-                        hintStyle: TextStyle(color: Color(0xFF6B6B8D)),
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Text('Kilograms', style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 12)),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Text('Kilograms', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                   ),
                 ],
               ),
@@ -653,9 +651,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333)),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Row(
                 children: [
@@ -668,19 +666,19 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         setState(() {});
                       },
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
                         hintText: '0',
-                        hintStyle: TextStyle(color: Color(0xFF6B6B8D)),
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Text('Repeats', style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 12)),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Text('Repeats', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                   ),
                 ],
               ),
@@ -694,7 +692,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF00D4AA),
+                color: Theme.of(context).colorScheme.secondary,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.add, color: Colors.black, size: 28),
@@ -712,7 +710,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
     return ValueListenableBuilder<Map<int, int>>(
       valueListenable: provider.exerciseTimersNotifier,
-      builder: (_, exerciseTimers, __) {
+      builder: (_, exerciseTimers, _) {
         final currentElapsed = exerciseTimers[exerciseId] ?? elapsed;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -723,13 +721,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: BoxDecoration(
                   color: isTimerActive
-                      ? const Color(0xFF00D4AA).withValues(alpha: 0.1)
-                      : const Color(0xFF1A1A1A),
+                      ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
+                      : Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isTimerActive
-                        ? const Color(0xFF00D4AA).withValues(alpha: 0.4)
-                        : const Color(0xFF333333),
+                        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4)
+                        : Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
                 child: Row(
@@ -737,7 +735,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   children: [
                     Icon(
                       Icons.timer,
-                      color: isTimerActive ? const Color(0xFF00D4AA) : const Color(0xFF6B6B8D),
+                      color: isTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -746,7 +744,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: isTimerActive ? const Color(0xFF00D4AA) : Colors.white,
+                        color: isTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -770,7 +768,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isTimerActive
                             ? const Color(0xFFFF6B6B)
-                            : const Color(0xFF00D4AA),
+                            : Theme.of(context).colorScheme.secondary,
                         foregroundColor: isTimerActive ? Colors.white : Colors.black,
                         minimumSize: const Size(0, 52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -787,9 +785,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       icon: const Icon(Icons.save),
                       onPressed: currentElapsed > 0 ? () => _addSet(provider) : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFF222222),
+                        disabledBackgroundColor: Theme.of(context).colorScheme.outline,
                         minimumSize: const Size(0, 52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -830,7 +828,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: const Divider(color: Color(0xFF222222), height: 1),
+              child: Divider(color: Theme.of(context).colorScheme.outline, height: 1),
             ),
             const SizedBox(height: 16),
             Padding(
@@ -838,12 +836,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'HISTORY',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: 1,
                     ),
                   ),
@@ -852,10 +850,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             ),
             const SizedBox(height: 12),
             if (_historyLoading)
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(color: Color(0xFF00D4AA), strokeWidth: 2),
+                  padding: const EdgeInsets.all(24),
+                  child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary, strokeWidth: 2),
                 ),
               )
             else if (!hasCurrentSets && _history.isEmpty)
@@ -886,12 +884,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TODAY (CURRENT)',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF00D4AA),
+              color: Theme.of(context).colorScheme.secondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -910,25 +908,25 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     width: 28,
                     child: Text(
                       '#$setNum',
-                      style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 13, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                   Text(
                     _isCardio
                         ? '$reps min'
                         : '${weight > 0 ? "${weight.toStringAsFixed(weight == weight.toInt() ? 0 : 1)} kg" : "BW"} x $reps reps',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00D4AA).withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'live',
-                      style: TextStyle(color: Color(0xFF00D4AA), fontSize: 10, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 10, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -937,7 +935,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           }),
           if (_history.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Divider(color: Color(0xFF333333), height: 1),
+            Divider(color: Theme.of(context).colorScheme.outlineVariant, height: 1),
             const SizedBox(height: 12),
           ],
         ],
@@ -962,10 +960,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         children: [
           Text(
             dateStr,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -984,14 +982,14 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     width: 28,
                     child: Text(
                       '#$setNum',
-                      style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 13),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
                     ),
                   ),
                   Text(
                     _isCardio
                         ? '$reps min'
                         : '${weight > 0 ? "${weight.toStringAsFixed(weight == weight.toInt() ? 0 : 1)} kg" : "BW"} x $reps reps',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
                   ),
                 ],
               ),
@@ -1005,9 +1003,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   Widget _buildExRxButton() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
-        border: Border(top: BorderSide(color: Color(0xFF1A1A1A))),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
       ),
       child: SizedBox(
         width: double.infinity,
@@ -1020,7 +1018,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C63FF),
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),

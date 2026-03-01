@@ -53,11 +53,9 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Workout schedule', style: TextStyle(color: Colors.white, fontSize: 18)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Color(0xFF6B6B8D)),
+        title: Text('Workout schedule', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18)),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -70,24 +68,24 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
               focusedDay: _focusedDay,
               calendarFormat: CalendarFormat.month,
               startingDayOfWeek: StartingDayOfWeek.sunday,
-              headerStyle: const HeaderStyle(
+              headerStyle: HeaderStyle(
                 formatButtonVisible: false,
                 titleCentered: true,
-                titleTextStyle: TextStyle(color: Colors.white, fontSize: 18),
-                leftChevronIcon: Icon(Icons.arrow_back, color: Color(0xFF00D4AA)),
-                rightChevronIcon: Icon(Icons.arrow_forward, color: Color(0xFF00D4AA)),
+                titleTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18),
+                leftChevronIcon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary),
+                rightChevronIcon: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.secondary),
               ),
-              daysOfWeekStyle: const DaysOfWeekStyle(
-                weekdayStyle: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600),
-                weekendStyle: TextStyle(color: Color(0xFF6B6B8D), fontWeight: FontWeight.w600),
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                weekendStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
               ),
               calendarStyle: CalendarStyle(
-                defaultTextStyle: const TextStyle(color: Colors.white),
-                weekendTextStyle: const TextStyle(color: Colors.white),
+                defaultTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                weekendTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 todayDecoration: const BoxDecoration(
                   color: Colors.transparent,
                 ),
-                todayTextStyle: const TextStyle(color: Colors.white),
+                todayTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, date, _) {
@@ -101,12 +99,12 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
                         Text(
                           '${date.day}',
                           style: TextStyle(
-                            color: isWorkoutDay ? const Color(0xFF00D4AA) : Colors.white,
+                            color: isWorkoutDay ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
                             fontWeight: isWorkoutDay ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         if (isWorkoutDay)
-                          const Icon(Icons.fitness_center, size: 12, color: Color(0xFF6B6B8D)),
+                          Icon(Icons.fitness_center, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ],
                     ),
                   );
@@ -150,9 +148,9 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
             ),
 
             const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Select your workout days', style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 14)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('Select your workout days', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
             ),
             const SizedBox(height: 16),
             
@@ -174,11 +172,11 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
             ),
             
             const SizedBox(height: 24),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 'The highlighted days will be displayed in the calendar',
-                style: TextStyle(color: Color(0xFF6B6B8D), fontSize: 13),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               ),
             ),
             const SizedBox(height: 40),
@@ -196,7 +194,7 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00D4AA) : const Color(0xFF222222),
+          color: isSelected ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
           shape: BoxShape.circle,
         ),
         child: Center(
@@ -219,12 +217,12 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w500))),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF00D4AA),
-            inactiveTrackColor: const Color(0xFF222222),
+            activeThumbColor: Theme.of(context).colorScheme.secondary,
+            inactiveTrackColor: Theme.of(context).colorScheme.outline,
           ),
         ],
       ),
@@ -241,13 +239,13 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.info_outline, size: 14, color: Color(0xFF6B6B8D)),
+                    Icon(Icons.info_outline, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    Expanded(child: Text(subtitle, style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 13))),
+                    Expanded(child: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13))),
                   ],
                 ),
               ],
@@ -257,8 +255,8 @@ class _WorkoutScheduleScreenState extends State<WorkoutScheduleScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF00D4AA),
-            inactiveTrackColor: const Color(0xFF222222),
+            activeThumbColor: Theme.of(context).colorScheme.secondary,
+            inactiveTrackColor: Theme.of(context).colorScheme.outline,
           ),
         ],
       ),

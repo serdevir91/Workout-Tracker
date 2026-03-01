@@ -57,7 +57,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 9, // Upgraded to v9 (indexes)
+      version: 12, // v12: background mode setting
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -112,16 +112,47 @@ class DatabaseHelper {
         theme TEXT DEFAULT 'system',
         language TEXT DEFAULT 'en',
         unit TEXT DEFAULT 'kg',
+        measurement_system TEXT DEFAULT 'metric',
         height REAL,
         weight REAL,
         last_weight_update TEXT,
+        arm_circumference REAL,
+        waist_circumference REAL,
+        shoulder_width REAL,
+        chest_circumference REAL,
+        hip_circumference REAL,
+        thigh_circumference REAL,
+        calf_circumference REAL,
+        neck_circumference REAL,
+        forearm_circumference REAL,
         show_on_dashboard INTEGER DEFAULT 1,
         display_all_data INTEGER DEFAULT 1,
         auto_positioning INTEGER DEFAULT 0,
-        workout_days TEXT DEFAULT '1,2,3,4,5,6,7'
+        workout_days TEXT DEFAULT '1,2,3,4,5,6,7',
+        color_palette TEXT DEFAULT 'default',
+        background_mode TEXT DEFAULT 'default'
       )
     ''');
     await db.execute("INSERT INTO user_settings (id) VALUES (1)");
+
+    // 2b. Body measurement history
+    await db.execute('''
+      CREATE TABLE body_measurements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        weight REAL,
+        height REAL,
+        arm_circumference REAL,
+        waist_circumference REAL,
+        shoulder_width REAL,
+        chest_circumference REAL,
+        hip_circumference REAL,
+        thigh_circumference REAL,
+        calf_circumference REAL,
+        neck_circumference REAL,
+        forearm_circumference REAL
+      )
+    ''');
 
     await db.execute('''
       CREATE TABLE off_days (
@@ -252,6 +283,46 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_exercise_sets_exercise_id ON exercise_sets(exercise_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_exercises_name ON exercises(name)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time)');
+    }
+
+    if (oldVersion < 10) {
+      // Add measurement_system and body measurement columns to user_settings
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN measurement_system TEXT DEFAULT \'metric\''); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN arm_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN waist_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN shoulder_width REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN chest_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN hip_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN thigh_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN calf_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN neck_circumference REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN forearm_circumference REAL'); } catch (_) {}
+
+      // Create body measurement history table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS body_measurements (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT NOT NULL,
+          weight REAL,
+          height REAL,
+          arm_circumference REAL,
+          waist_circumference REAL,
+          shoulder_width REAL,
+          chest_circumference REAL,
+          hip_circumference REAL,
+          thigh_circumference REAL,
+          calf_circumference REAL,
+          neck_circumference REAL,
+          forearm_circumference REAL
+        )
+      ''');
+    }
+    if (oldVersion < 11) {
+      // Add color_palette column to user_settings
+      try { await db.execute("ALTER TABLE user_settings ADD COLUMN color_palette TEXT DEFAULT 'default'"); } catch (_) {}
+    }
+    if (oldVersion < 12) {
+      try { await db.execute("ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'default'"); } catch (_) {}
     }
   }
 
@@ -836,5 +907,37 @@ class DatabaseHelper {
     } else {
       await db.delete('off_days', where: 'date = ?', whereArgs: [dateStr]);
     }
+  }
+
+  // ==================== BODY MEASUREMENTS ====================
+
+  /// Insert a body measurement history record.
+  Future<int> insertBodyMeasurement(Map<String, dynamic> data) async {
+    final db = await database;
+    return db.insert('body_measurements', data);
+  }
+
+  /// Get body measurement history, ordered by date descending.
+  Future<List<Map<String, dynamic>>> getBodyMeasurements({int limit = 50}) async {
+    final db = await database;
+    return db.query(
+      'body_measurements',
+      orderBy: 'date DESC',
+      limit: limit,
+    );
+  }
+
+  /// Get body measurement history for a specific field for charting.
+  /// Returns [{date, value}] ordered by date ascending.
+  Future<List<Map<String, dynamic>>> getBodyMeasurementHistory(String field, {int limit = 30}) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT date, $field as value
+      FROM body_measurements
+      WHERE $field IS NOT NULL AND $field > 0
+      ORDER BY date ASC
+      LIMIT ?
+    ''', [limit]);
+    return result;
   }
 }

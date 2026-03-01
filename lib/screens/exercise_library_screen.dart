@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../utils/exrx_url_matcher.dart';
 import 'exercise_info_screen.dart';
+import 'settings_screen.dart';
 
 /// Modern exercise library with grid/list view, GIF thumbnails,
 /// category tabs with counts, and smooth search.
@@ -111,22 +112,20 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     return _categoryDefs.firstWhere(
       (m) => m.name == cat,
       orElse: () =>
-          const _CategoryMeta('Other', Icons.fitness_center, Color(0xFF6C63FF)),
+          _CategoryMeta('Other', Icons.fitness_center, Theme.of(context).colorScheme.primary),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+          ? Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => [
                 // Sliver app bar with search
                 SliverAppBar(
-                  backgroundColor: const Color(0xFF0F0F15),
                   pinned: true,
                   floating: true,
                   snap: true,
@@ -152,6 +151,11 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                           setState(() => _isGridView = !_isGridView),
                       tooltip: _isGridView ? 'List view' : 'Grid view',
                     ),
+                    if (!widget.pickMode)
+                      IconButton(
+                        icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                      ),
                     const SizedBox(width: 4),
                   ],
                   flexibleSpace: FlexibleSpaceBar(
@@ -191,7 +195,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   Widget _buildSearchBar() {
     return TextField(
       controller: _searchController,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: 'Search ${_allExercises.length} exercises...',
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
@@ -205,7 +209,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               )
             : null,
         filled: true,
-        fillColor: const Color(0xFF1A1A2E),
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -273,7 +277,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       onTap: () => _onExerciseTap(exercise),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF141420),
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: meta.color.withValues(alpha: 0.15),
@@ -290,7 +294,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(color: const Color(0xFF1A1A2E)),
+                  Container(color: Theme.of(context).colorScheme.surface),
                   if (gifUrl.isNotEmpty)
                     Image.network(
                       gifUrl,
@@ -355,7 +359,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF),
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.add_rounded,
@@ -376,8 +380,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     height: 1.2,
@@ -415,7 +419,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFF141420),
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.05),
@@ -428,7 +432,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
               ),
               clipBehavior: Clip.antiAlias,
@@ -457,8 +461,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -486,8 +490,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             // Action
             if (widget.pickMode)
               IconButton(
-                icon: const Icon(Icons.add_circle_rounded,
-                    color: Color(0xFF6C63FF), size: 26),
+                icon: Icon(Icons.add_circle_rounded,
+                    color: Theme.of(context).colorScheme.primary, size: 26),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 onPressed: () =>
@@ -564,7 +568,7 @@ class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(
           dragDevices: {

@@ -120,14 +120,12 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(widget.existingPlan == null ? 'Create Workout' : 'Edit Workout'),
-        backgroundColor: Colors.black,
         actions: [
           TextButton(
             onPressed: _saveRoutine,
-            child: const Text('Save', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ],
       ),
@@ -136,16 +134,16 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
         children: [
           TextField(
             controller: _nameController,
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            decoration: const InputDecoration(
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
               hintText: 'Workout Name',
-              hintStyle: TextStyle(color: Color(0xFF6B6B8D)),
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               border: InputBorder.none,
             ),
           ),
           Text(
             _isEditing ? 'Select your workout day' : 'Select workout days',
-            style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
           ),
           const SizedBox(height: 12),
           Row(
@@ -180,13 +178,13 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected ? const Color(0xFF00D4AA) : const Color(0xFF222222),
+                    color: isSelected ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.outline,
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     dayLabels[index],
                     style: TextStyle(
-                      color: isSelected ? Colors.black : const Color(0xFFA0A0C0),
+                      color: isSelected ? Colors.black : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -200,10 +198,10 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
             _isEditing
                 ? 'The highlighted day will be displayed in the calendar'
                 : 'Tap multiple days to assign this workout to each',
-            style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
           ),
           const SizedBox(height: 24),
-          const Text('Exercises', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+          Text('Exercises', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           ReorderableListView.builder(
             shrinkWrap: true,
@@ -236,9 +234,9 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Add Exercise'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF).withValues(alpha: 0.2),
-              foregroundColor: const Color(0xFF6C63FF),
-              side: const BorderSide(color: Color(0xFF6C63FF)),
+              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -253,7 +251,7 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
               icon: const Icon(Icons.delete),
               label: const Text('Delete Workout'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A1A2E),
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 foregroundColor: const Color(0xFFFF6B6B),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -341,9 +339,9 @@ class _ExerciseCardState extends State<_ExerciseCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2A2A3E)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -351,16 +349,16 @@ class _ExerciseCardState extends State<_ExerciseCard> {
           children: [
             Row(
               children: [
-                const Icon(Icons.drag_indicator, color: Color(0xFF6B6B8D)),
+                Icon(Icons.drag_indicator, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(width: 8),
                 if (_isCardio) ...[
-                  const Icon(Icons.directions_run, color: Color(0xFF00D4AA), size: 18),
+                  Icon(Icons.directions_run, color: Theme.of(context).colorScheme.secondary, size: 18),
                   const SizedBox(width: 4),
                 ],
                 Expanded(
                   child: Text(
                     widget.exercise.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
                 IconButton(
@@ -404,7 +402,7 @@ class _ExerciseCardState extends State<_ExerciseCard> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 12),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
@@ -412,11 +410,11 @@ class _ExerciseCardState extends State<_ExerciseCard> {
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: const Color(0xFF111111),
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
           ),

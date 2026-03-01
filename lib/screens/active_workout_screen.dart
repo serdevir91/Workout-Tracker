@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/exercise_thumbnail.dart';
 import '../providers/workout_provider.dart';
+import '../providers/settings_provider.dart';
+import '../l10n/translations.dart';
 import '../models/workout_models.dart';
 import '../utils/formatters.dart';
-import '../utils/exrx_url_matcher.dart';
-import 'exercise_info_screen.dart';
 import 'exercise_library_screen.dart';
 import 'workout_summary_screen.dart';
+import 'swipeable_exercise_screen.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   const ActiveWorkoutScreen({super.key});
@@ -63,9 +64,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     return Consumer<WorkoutProvider>(
       builder: (context, provider, _) {
         if (!provider.isWorkoutActive) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(child: Text('No active workout', style: TextStyle(color: Colors.white))),
+          final t = Translations.of(context);
+          return Scaffold(
+            body: Center(child: Text(t.get('no_active_workout'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
           );
         }
 
@@ -81,17 +82,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         if (progress > 1.0) progress = 1.0;
 
         return Scaffold(
-          backgroundColor: Colors.black,
           appBar: AppBar(
-            backgroundColor: Colors.black,
             title: Text(provider.activeWorkout!.name),
             actions: [
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111111),
-                  border: Border.all(color: const Color(0xFF222222)),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -100,7 +99,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     IconButton(
                       icon: Icon(
                         provider.isTimerRunning ? Icons.pause : Icons.play_arrow,
-                        color: const Color(0xFF00D4AA),
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
@@ -115,11 +114,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     const SizedBox(width: 4),
                     ValueListenableBuilder<int>(
                       valueListenable: provider.elapsedSecondsNotifier,
-                      builder: (_, elapsed, __) => Text(
+                      builder: (_, elapsed, _) => Text(
                         formatDuration(elapsed),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF00D4AA),
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -133,15 +132,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               // Progress Bar
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('$completedSets / $totalPlannedSets sets', style: const TextStyle(color: Color(0xFFA0A0C0), fontSize: 13)),
-                         Text('${(progress * 100).toInt()}%', style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold)),
+                        Text('$completedSets / $totalPlannedSets sets', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+                         Text('${(progress * 100).toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -149,8 +148,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: const Color(0xFF222222),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00D4AA)),
+                        backgroundColor: Theme.of(context).colorScheme.outline,
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
                         minHeight: 8,
                       ),
                     ),
@@ -160,23 +159,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               // Rest Timer
               ValueListenableBuilder<int>(
                 valueListenable: provider.restTimerNotifier,
-                builder: (_, restSeconds, __) {
+                builder: (_, restSeconds, _) {
                   if (restSeconds <= 0) return const SizedBox.shrink();
                   return Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    color: const Color(0xFF6C63FF).withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.timer, color: Color(0xFF6C63FF), size: 20),
+                        Icon(Icons.timer, color: Theme.of(context).colorScheme.primary, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Rest Timer: ${formatDuration(restSeconds)}',
-                          style: const TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(width: 16),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                          icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                           onPressed: () => provider.stopRestTimer(),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -211,14 +210,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         children: [
           Icon(Icons.add_circle_outline, size: 48, color: Colors.white.withValues(alpha: 0.2)),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Add exercise',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tap the button below to add an exercise',
-            style: TextStyle(color: Color(0xFF6B6B8D)),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -235,10 +234,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     final lastRecord = provider.getLastExerciseStats(activeEx.exercise.name);
 
     return Card(
-      color: const Color(0xFF0F0F12),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF222222)),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline),
       ),
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -255,22 +254,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () async {
-                            final result = await ExrxUrlMatcher.findExercise(activeEx.exercise.name);
+                          onTap: () {
                             if (!context.mounted) return;
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ExerciseInfoScreen(
-                                  exerciseName: activeEx.exercise.name,
-                                  exrxUrl: result?['url'] ?? '',
-                                  gifUrl: result?['gif_url'] ?? '',
-                                  exerciseId: activeEx.exercise.id,
-                                  targetSets: activeEx.targetSets,
-                                  targetReps: activeEx.targetReps,
-                                  targetWeight: activeEx.targetWeight,
-                                  restSeconds: activeEx.restSeconds,
-                                  isCardio: activeEx.isCardio,
+                                builder: (_) => SwipeableExerciseScreen(
+                                  exercises: provider.activeExercises,
+                                  initialIndex: index,
                                 ),
                               ),
                             );
@@ -282,10 +273,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                               Expanded(
                                 child: Text(
                                   activeEx.exercise.name,
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
                                 ),
                               ),
-                              const Icon(Icons.play_circle_outline, color: Color(0xFF00D4AA), size: 20),
+                              Icon(Icons.play_circle_outline, color: Theme.of(context).colorScheme.secondary, size: 20),
                             ],
                           ),
                         ),
@@ -299,11 +290,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                            showDialog(
                              context: context,
                              builder: (ctx) => AlertDialog(
-                                backgroundColor: const Color(0xFF0F0F12),
-                                title: const Text('Delete Exercise?', style: TextStyle(color: Colors.white)),
-                                content: const Text('All sets will be lost.', style: TextStyle(color: Color(0xFFA0A0C0))),
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                                title: Text(Translations.of(context).get('delete'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                                content: Text(Translations.of(context).get('delete_workout_confirm'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                 actions: [
-                                   TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                   TextButton(onPressed: () => Navigator.pop(ctx), child: Text(Translations.of(context).get('cancel'))),
                                    TextButton(
                                       onPressed: () {
                                          _weightControllers[exerciseId]?.dispose();
@@ -313,7 +304,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                                          provider.deleteExercise(exerciseId);
                                          Navigator.pop(ctx);
                                       },
-                                      child: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B))),
+                                      child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
                                    ),
                                 ],
                              ),
@@ -331,9 +322,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111111),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF222222)),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   children: [
@@ -343,17 +334,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       child: Row(
                         children: [
                           if (!isCardio) ...[
-                            SizedBox(width: 40, child: Text('Set', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)))),
-                            Expanded(child: Text('Weight (kg)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)))),
-                            SizedBox(width: 60, child: Text('Reps', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)))),
+                            SizedBox(width: 40, child: Text(Translations.of(context).get('sets'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+                            Expanded(child: Text('${Translations.of(context).get('weight')} (${context.read<SettingsProvider>().unit})', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+                            SizedBox(width: 60, child: Text(Translations.of(context).get('reps'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                           ] else ...[
-                            SizedBox(width: 40, child: Text('Set', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)))),
-                            Expanded(child: Text('Duration (Minutes)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA0A0C0)))),
+                            SizedBox(width: 40, child: Text(Translations.of(context).get('sets'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+                            Expanded(child: Text('Duration (Minutes)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                           ]
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFF222222)),
+                    Divider(height: 1, color: Theme.of(context).colorScheme.outline),
                     ...activeEx.sets.map((s) => Dismissible(
                       key: Key('set_${s.id}'),
                       direction: DismissDirection.endToStart,
@@ -374,12 +365,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           child: Row(
                             children: [
-                              SizedBox(width: 40, child: Text('${s.setNumber}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
+                              SizedBox(width: 40, child: Text('${s.setNumber}', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface))),
                               if (!isCardio) ...[
-                                Expanded(child: Text('${s.weight} kg', style: const TextStyle(color: Colors.white))),
-                                SizedBox(width: 60, child: Text('${s.reps}', style: const TextStyle(color: Colors.white))),
+                                Expanded(child: Text(context.read<SettingsProvider>().formatWeight(s.weight), style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                                SizedBox(width: 60, child: Text('${s.reps}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                               ] else ...[
-                                Expanded(child: Text('${s.reps} min', style: const TextStyle(color: Colors.white))),
+                                Expanded(child: Text('${s.reps} min', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                               ]
                             ],
                           ),
@@ -404,16 +395,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                           controller: _getWeightController(exerciseId, provider),
                           onChanged: (val) => provider.setDraftWeight(exerciseId, val),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                           decoration: InputDecoration(
-                            hintText: 'kg',
-                            hintStyle: const TextStyle(color: Color(0xFF6B6B8D)),
+                            hintText: context.read<SettingsProvider>().unit,
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             isDense: false,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             filled: true,
-                            fillColor: const Color(0xFF111111),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF222222))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF222222))),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
                           ),
                         ),
                       ),
@@ -426,16 +417,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                           controller: _getRepsController(exerciseId, provider),
                           onChanged: (val) => provider.setDraftReps(exerciseId, val),
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                           decoration: InputDecoration(
-                            hintText: 'Reps',
-                            hintStyle: const TextStyle(color: Color(0xFF6B6B8D)),
+                            hintText: Translations.of(context).get('reps'),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             isDense: false,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             filled: true,
-                            fillColor: const Color(0xFF111111),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF222222))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF222222))),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
                           ),
                         ),
                       ),
@@ -444,7 +435,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     ElevatedButton(
                       onPressed: () => _addSet(context, provider, exerciseId, false, 0),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         minimumSize: const Size(0, 52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -458,15 +449,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
                     child: Text(
-                      'Last Session: ${lastRecord['sets']} Sets (Max: ${(lastRecord['max_weight'] as num).toDouble().toStringAsFixed(0)} kg, ${lastRecord['total_reps']} Reps)',
-                      style: const TextStyle(color: Color(0xFF6B6B8D), fontSize: 12, fontStyle: FontStyle.italic),
+                      'Last Session: ${lastRecord['sets']} Sets (Max: ${context.read<SettingsProvider>().formatWeight((lastRecord['max_weight'] as num).toDouble())}, ${lastRecord['total_reps']} ${Translations.of(context).get('reps')})',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontStyle: FontStyle.italic),
                     ),
                   ),
                 ]
               ] else
                 ValueListenableBuilder<Map<int, int>>(
                   valueListenable: provider.exerciseTimersNotifier,
-                  builder: (_, exerciseTimers, __) {
+                  builder: (_, exerciseTimers, _) {
                     final elapsed = exerciseTimers[exerciseId] ?? 0;
                     return Column(
                   children: [
@@ -475,13 +466,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isCardioTimerActive
-                            ? const Color(0xFF00D4AA).withValues(alpha: 0.1)
-                            : const Color(0xFF111111),
+                            ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
+                            : Theme.of(context).colorScheme.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isCardioTimerActive
-                              ? const Color(0xFF00D4AA).withValues(alpha: 0.4)
-                              : const Color(0xFF222222),
+                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4)
+                              : Theme.of(context).colorScheme.outline,
                         ),
                       ),
                       child: Row(
@@ -489,7 +480,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                         children: [
                           Icon(
                             Icons.timer,
-                            color: isCardioTimerActive ? const Color(0xFF00D4AA) : const Color(0xFF6B6B8D),
+                            color: isCardioTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurfaceVariant,
                             size: 24,
                           ),
                           const SizedBox(width: 8),
@@ -498,7 +489,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: isCardioTimerActive ? const Color(0xFF00D4AA) : Colors.white,
+                              color: isCardioTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
                               fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                           ),
@@ -522,8 +513,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isCardioTimerActive
                                   ? const Color(0xFFFF6B6B)
-                                  : const Color(0xFF00D4AA),
-                              foregroundColor: isCardioTimerActive ? Colors.white : Colors.black,
+                                  : Theme.of(context).colorScheme.secondary,
+                              foregroundColor: isCardioTimerActive ? Colors.white : Theme.of(context).colorScheme.onSurface,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               minimumSize: const Size(0, 44),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -548,9 +539,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFF222222),
+                              disabledBackgroundColor: Theme.of(context).colorScheme.outline,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               minimumSize: const Size(0, 44),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -604,24 +595,24 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF0F0F12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFF222222))),
-          title: Text('Edit Set ${s.setNumber}', style: const TextStyle(color: Colors.white)),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
+          title: Text('Edit Set ${s.setNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           content: TextField(
             controller: durationController,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               labelText: 'Duration (min)',
-              labelStyle: const TextStyle(color: Color(0xFF6B6B8D)),
+              labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               filled: true,
-              fillColor: const Color(0xFF111111),
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-              prefixIcon: const Icon(Icons.timer, color: Color(0xFF00D4AA)),
+              prefixIcon: Icon(Icons.timer, color: Theme.of(context).colorScheme.secondary),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFFA0A0C0)))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
             TextButton(
               onPressed: () {
                 final newDuration = int.tryParse(durationController.text) ?? 0;
@@ -630,7 +621,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 }
                 Navigator.pop(ctx);
               },
-              child: const Text('Update', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold)),
+              child: Text('Update', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -645,21 +636,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F0F12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFF222222))),
-        title: Text('Edit Set ${s.setNumber}', style: const TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
+        title: Text('Edit Set ${s.setNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: weightController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: 'Weight (kg)',
-                  labelStyle: const TextStyle(color: Color(0xFF6B6B8D)),
+                  labelText: '${Translations.of(context).get('weight')} (${context.read<SettingsProvider>().unit})',
+                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: const Color(0xFF111111),
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 ),
               ),
@@ -669,12 +660,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               child: TextField(
                 controller: repsController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: 'Reps',
-                  labelStyle: const TextStyle(color: Color(0xFF6B6B8D)),
+                  labelText: Translations.of(context).get('reps'),
+                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: const Color(0xFF111111),
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 ),
               ),
@@ -682,7 +673,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Color(0xFFA0A0C0)))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(Translations.of(context).get('cancel'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
           TextButton(
             onPressed: () {
               final newWeight = double.tryParse(weightController.text) ?? 0;
@@ -692,7 +683,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Update', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold)),
+            child: Text('Update', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -702,9 +693,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   Widget _buildBottomBar(BuildContext context, WorkoutProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: Color(0xFF222222))),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
       ),
       child: Row(
         children: [
@@ -714,27 +705,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  backgroundColor: const Color(0xFF0F0F12),
-                  title: const Text('Cancel Workout', style: TextStyle(color: Colors.white)),
-                  content: const Text('Are you sure you want to cancel and delete this workout?', style: TextStyle(color: Color(0xFFA0A0C0))),
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  title: Text(Translations.of(context).get('cancel'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  content: Text(Translations.of(context).get('delete_workout_confirm'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(Translations.of(context).get('cancel'))),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(ctx);
                         provider.cancelWorkout();
                         Navigator.pop(context);
                       },
-                      child: const Text('Yes, Cancel', style: TextStyle(color: Color(0xFFFF6B6B))),
+                      child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
                     )
                   ],
                 ),
               );
             },
             icon: const Icon(Icons.close, size: 20),
-            label: const Text('Cancel'),
+            label: Text(Translations.of(context).get('cancel')),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF111111),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
               foregroundColor: const Color(0xFFFF6B6B),
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
               side: const BorderSide(color: Color(0xFFFF6B6B)),
@@ -754,12 +745,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 }
               },
               icon: const Icon(Icons.add, size: 20),
-              label: const Text('Add Exercise'),
+              label: Text(Translations.of(context).get('add_exercise')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A1A2E),
-                foregroundColor: const Color(0xFF6C63FF),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                foregroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: Color(0xFF6C63FF)),
+                side: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ),
@@ -768,10 +759,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           ElevatedButton.icon(
             onPressed: () => _finishWorkout(context, provider),
             icon: const Icon(Icons.check_circle, size: 20),
-            label: const Text('Finish'),
+            label: Text(Translations.of(context).get('finish')),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4AA),
-              foregroundColor: Colors.black,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             ),
           ),
@@ -798,17 +789,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F0F12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFF222222))),
-        title: const Text('Finish Workout', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
+        title: Text(Translations.of(context).get('finish'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Text(
-          'Total duration: ${formatDuration(provider.workoutElapsedSeconds)}\nDo you want to finish and save?',
-          style: const TextStyle(color: Color(0xFFA0A0C0)),
+          'Total duration: ${formatDuration(provider.workoutElapsedSeconds)}',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFFA0A0C0))),
+            child: Text(Translations.of(context).get('cancel'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {
@@ -830,7 +821,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               // Fire and forget
               provider.finishWorkout();
             },
-            child: const Text('Finish', style: TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold)),
+            child: Text(Translations.of(context).get('finish'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

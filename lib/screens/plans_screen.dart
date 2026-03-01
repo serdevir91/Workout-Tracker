@@ -19,7 +19,7 @@ class PlansScreen extends StatelessWidget {
             title: const Text('Workout Plans'),
           ),
           body: plans.isEmpty
-              ? const Center(child: Text('No custom plans found. Create one from the Home screen!', style: TextStyle(color: Color(0xFF6B6B8D))))
+              ? Center(child: Text('No custom plans found. Create one from the Home screen!', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: plans.length,
@@ -46,7 +46,7 @@ class PlansScreen extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: _getDayColors(plan.dayNumber),
+                colors: _getDayColors(context, plan.dayNumber),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -74,15 +74,15 @@ class PlansScreen extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               plan.targetMuscles,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFFA0A0C0),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           children: [
-            const Divider(color: Color(0xFF252547)),
-            ...plan.exercises.map((ex) => _buildExerciseRow(ex)),
+            Divider(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+            ...plan.exercises.map((ex) => _buildExerciseRow(context, ex)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -91,7 +91,7 @@ class PlansScreen extends StatelessWidget {
                 icon: const Icon(Icons.play_arrow, size: 20),
                 label: const Text('Start Workout'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00D4AA),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -102,7 +102,7 @@ class PlansScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseRow(PlanExercise exercise) {
+  Widget _buildExerciseRow(BuildContext context, PlanExercise exercise) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -118,15 +118,15 @@ class PlansScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFF252547),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               exercise.displayInfo,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF00D4AA),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ),
@@ -146,12 +146,12 @@ class PlansScreen extends StatelessWidget {
     }
   }
 
-  List<Color> _getDayColors(int day) {
+  List<Color> _getDayColors(BuildContext context, int day) {
     switch (day) {
       case 1:
-        return [const Color(0xFF6C63FF), const Color(0xFF9B59B6)];
+        return [Theme.of(context).colorScheme.primary, const Color(0xFF9B59B6)];
       case 2:
-        return [const Color(0xFF00D4AA), const Color(0xFF00B894)];
+        return [Theme.of(context).colorScheme.secondary, const Color(0xFF00B894)];
       case 3:
         return [const Color(0xFFFF6B6B), const Color(0xFFE17055)];
       case 4:
@@ -159,7 +159,7 @@ class PlansScreen extends StatelessWidget {
       case 5:
         return [const Color(0xFF3498DB), const Color(0xFF2980B9)];
       default:
-        return [const Color(0xFF6C63FF), const Color(0xFF9B59B6)];
+        return [Theme.of(context).colorScheme.primary, const Color(0xFF9B59B6)];
     }
   }
 }
