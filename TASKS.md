@@ -1,10 +1,27 @@
 # Workout Tracker — Görev Listesi
 
-> Son güncelleme: 27 Şubat 2026
+> Son güncelleme: 2 Mart 2026
 
 ---
 
 ## Görevler
+
+### 10. 🚀 free-exercise-db Entegrasyonu (v3.0.0) ✅
+- [x] ExRx.net yerine free-exercise-db (Unlicense, 873 egzersiz) entegrasyonu
+- [x] `lib/utils/exercise_db.dart` oluşturuldu (ExrxUrlMatcher yerine)
+- [x] `assets/data/free_exercises.json` eklendi (873 egzersiz verisi)
+- [x] 8 Dart dosyası güncellendi (ExrxUrlMatcher → ExerciseDB)
+- [x] `exrx_url_matcher.dart`, `exrx_exercises.json` ve 24+ Python script silindi
+- [x] `url_launcher` bağımlılığı kaldırıldı
+- [x] Egzersiz ekleme bug'ı düzeltildi (pick mode Map<String,String> dönüşü)
+- [x] Otomatik resim geçişi eklendi (GIF-benzeri animasyon, 1.2s interval)
+- [x] v3.0.0+6 olarak versiyon güncellendi
+- [x] README.md güncellendi (free-exercise-db, 873 egzersiz, v3.0.0 changelog)
+- [x] AGENT.md güncellendi
+
+### 11. 📦 GitHub Release v3.0.0 ✅
+- [x] Git commit & push
+- [x] GitHub release oluştur (v3.0.0 tag, APK yükle)
 
 ### 1. 🔔 Bildirim Paneli — Aktif Antrenman Bildirimi ✅
 - [x] `flutter_local_notifications` paketini ekle (`pubspec.yaml`)
@@ -59,19 +76,23 @@
 
 ---
 
-## Tamamlanma Durumu: 9/9 ✅
+## Tamamlanma Durumu: 11/11 ✅
 
-`flutter analyze` sonucu: **No issues found!**
+`flutter analyze` sonucu: **No issues found!`
 
 ---
 
 ## Değişen Dosyalar
-- `pubspec.yaml` — permission_handler, flutter_local_notifications eklendi
-- `android/app/src/main/AndroidManifest.xml` — 7 yeni izin eklendi
-- `lib/main.dart` — NotificationService.init() eklendi
-- `lib/services/notification_service.dart` — **YENİ** bildirim servisi
-- `lib/providers/workout_provider.dart` — bildirim, cardio timer, tamamlanma % düzeltmesi
-- `lib/screens/active_workout_screen.dart` — UI yeniden düzenleme, cardio timer UI
-- `lib/screens/exercise_info_screen.dart` — Chart kaldırıldı, Repeats Required düzeltildi
-- `lib/screens/home_screen.dart` — Muscle Groups sıralama değişikliği
-- `lib/screens/settings_screen.dart` — Depolama izni + timestamp backup
+- `pubspec.yaml` — versiyon 3.0.0+6, url_launcher kaldırıldı
+- `lib/utils/exercise_db.dart` — **YENİ** free-exercise-db utility
+- `assets/data/free_exercises.json` — **YENİ** 873 egzersiz verisi
+- `lib/screens/exercise_info_screen.dart` — imageUrls, auto-cycling Timer, AnimatedSwitcher
+- `lib/screens/exercise_library_screen.dart` — ExerciseDB, pick mode bug fix
+- `lib/screens/swipeable_exercise_screen.dart` — ExerciseDB geçişi
+- `lib/screens/workout_detail_screen.dart` — ExerciseDB geçişi
+- `lib/screens/home_screen.dart` — ExerciseDB geçişi
+- `lib/providers/workout_provider.dart` — ExerciseDB geçişi
+- `lib/widgets/exercise_thumbnail.dart` — ExerciseDB, image_url
+- `README.md` — v3.0.0 changelog, free-exercise-db bilgisi
+- `AGENT.md` — free-exercise-db, şema v13, bağımlılık güncelleme
+- **Silinen:** `exrx_url_matcher.dart`, `exrx_exercises.json`, 24+ Python script

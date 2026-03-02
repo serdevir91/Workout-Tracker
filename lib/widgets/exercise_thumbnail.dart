@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 
 class ExerciseThumbnail extends StatefulWidget {
   final String exerciseName;
@@ -13,15 +13,15 @@ class ExerciseThumbnail extends StatefulWidget {
 
 class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
   static const int _maxCacheSize = 200;
-  static final Map<String, String?> _gifCache = {};
+  static final Map<String, String?> _imageCache = {};
   static final List<String> _cacheKeyOrder = [];
-  String? _gifUrl;
+  String? _imageUrl;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadGif();
+    _loadImage();
   }
 
   @override
@@ -29,36 +29,36 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.exerciseName != widget.exerciseName) {
       _isLoading = true;
-      _gifUrl = null;
-      _loadGif();
+      _imageUrl = null;
+      _loadImage();
     }
   }
 
   static void _addToCache(String key, String? value) {
-    if (_gifCache.containsKey(key)) {
+    if (_imageCache.containsKey(key)) {
       _cacheKeyOrder.remove(key);
-    } else if (_gifCache.length >= _maxCacheSize) {
+    } else if (_imageCache.length >= _maxCacheSize) {
       final evict = _cacheKeyOrder.removeAt(0);
-      _gifCache.remove(evict);
+      _imageCache.remove(evict);
     }
-    _gifCache[key] = value;
+    _imageCache[key] = value;
     _cacheKeyOrder.add(key);
   }
 
-  Future<void> _loadGif() async {
+  Future<void> _loadImage() async {
     final name = widget.exerciseName;
-    if (_gifCache.containsKey(name)) {
-      if (mounted) setState(() { _gifUrl = _gifCache[name]; _isLoading = false; });
+    if (_imageCache.containsKey(name)) {
+      if (mounted) setState(() { _imageUrl = _imageCache[name]; _isLoading = false; });
       return;
     }
 
-    final result = await ExrxUrlMatcher.findExercise(name);
-    final gif = result?['gif_url'];
-    _addToCache(name, gif);
+    final result = await ExerciseDB.findExercise(name);
+    final img = result?['image_url'] as String?;
+    _addToCache(name, img);
     
     if (mounted) {
       setState(() {
-        _gifUrl = gif;
+        _imageUrl = img;
         _isLoading = false;
       });
     }
@@ -75,7 +75,7 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
       );
     }
 
-    if (_gifUrl == null || _gifUrl!.isEmpty) {
+    if (_imageUrl == null || _imageUrl!.isEmpty) {
       return Container(
         width: widget.size,
         height: widget.size,
@@ -87,7 +87,7 @@ class _ExerciseThumbnailState extends State<ExerciseThumbnail> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
-        _gifUrl!,
+        _imageUrl!,
         width: widget.size,
         height: widget.size,
         fit: BoxFit.cover,

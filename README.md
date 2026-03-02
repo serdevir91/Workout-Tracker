@@ -13,7 +13,7 @@
 ## ✨ Features
 
 - **Light / Dark / Pure Black Themes:** Full theme support with 6 color palettes (Default, Ocean, Sunset, Forest, Rose, Crimson) and AMOLED-friendly pure black mode.
-- **Exercise Library:** 526+ exercises categorized by muscle groups with GIF demonstrations sourced from ExRx.net.
+- **Exercise Library:** 873 exercises categorized by muscle groups with auto-cycling image demonstrations (public domain, [free-exercise-db](https://github.com/yuhonas/free-exercise-db)).
 - **Smart Tracking:** Log sets, reps, and weights during active workout sessions with swipeable exercise navigation and built-in rest timer.
 - **Cardio Support:** Dedicated cardio timer for exercises like Cycle Ergometer, Treadmill, etc.
 - **Workout Plans & Routines:** Create custom routines, assign them to specific days, and follow structured training programs.
@@ -28,7 +28,7 @@
 - **Multi-Language Support:** English, Turkish (Türkçe), and Spanish (Español) localization built-in.
 - **First Day of Week Setting:** Choose Monday, Saturday, or Sunday as your week start — workout plans sort accordingly.
 - **Add Exercise from Library:** Long-press or tap "Add to Workout" from any exercise detail to add it to a workout plan.
-- **Redesigned Exercise Detail Screen:** Hero GIF with SliverAppBar, card-based metrics, modern history cards.
+- **Redesigned Exercise Detail Screen:** Hero images with SliverAppBar, auto-cycling GIF-like animation, card-based metrics, modern history cards.
 - **Backup & Restore:** Export/import your workout data for safe keeping.
 - **Cross-Platform:** Runs seamlessly on Android and Windows Desktop.
 
@@ -124,7 +124,17 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v2.2.1)
+## 📋 What's New (v3.0.0)
+
+- **Free Exercise Database** — Replaced ExRx.net with [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (873 exercises, public domain / Unlicense)
+- **Auto-Cycling Exercise Images** — Exercise detail screen images now auto-cycle between start/end positions like a GIF animation (1.2s interval)
+- **Improved Image Quality** — High-resolution JPG images for all exercises, served from GitHub CDN
+- **Exercise Add Bug Fixed** — Adding exercises to workouts from the library now works correctly in all views
+- **Removed url_launcher Dependency** — Streamlined dependencies, no more external browser launches for exercises
+- **Cleaned Up Codebase** — Removed 24+ legacy Python scraping scripts and outdated data files
+
+<details>
+<summary>v2.2.1 Changes</summary>
 
 - **Redesigned Exercise Detail Screen** — Hero GIF with SliverAppBar, card-based metrics, modern history cards with LIVE badge
 - **First Day of Week Setting** — Choose Monday, Saturday, or Sunday; workout plans sort accordingly
@@ -132,6 +142,8 @@ flutter build windows
 - **Exercise Counter Repositioned** — Swipe indicator (1/8) now sits right below the sets counter badge
 - **Workout Plan Sorting** — Next training cards respect first day of week setting
 - **Alternative Exercise Swap** — Quick swap button in exercise detail AppBar
+
+</details>
 
 <details>
 <summary>v2.1.0 Changes</summary>
@@ -152,7 +164,6 @@ flutter build windows
 - Post-workout Summary screen
 - Settings screen (Theme, Color Palette, Background Mode, Language, Units, Profile)
 - Exercise thumbnails in workout lists
-- Improved ExRx exercise matching
 - Windows desktop support improvements
 
 </details>
@@ -160,7 +171,7 @@ flutter build windows
 <details>
 <summary>v2.0.0 Changes</summary>
 
-- **Exercise library overhaul** — 526+ exercises with ExRx.net GIF demonstrations
+- **Exercise library overhaul** — 526+ exercises with GIF demonstrations
 - **Workout Plans & Routines** — Create custom routines and assign to specific days
 - **Workout Schedule** — Calendar-based weekly schedule with configurable workout days
 - **Post-workout Summary** — Calories burned, total time, and total volume overview
@@ -177,7 +188,7 @@ flutter build windows
 <summary>v1.0.0 — Initial Release</summary>
 
 - Core workout tracking with sets, reps, and weight logging
-- Exercise library with 526+ exercises and GIF demonstrations from ExRx.net
+- Exercise library with 526+ exercises and GIF demonstrations
 - Active workout session with rest timer
 - Workout history and detail screens
 - SQLite local database storage

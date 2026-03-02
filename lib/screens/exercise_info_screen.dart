@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/workout_provider.dart';
 import '../models/workout_models.dart';
 import '../models/workout_plan_models.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 import '../utils/formatters.dart';
 import '../l10n/translations.dart';
 
@@ -15,8 +15,9 @@ import '../l10n/translations.dart';
 /// - ActiveWorkoutScreen (interactive mode, exerciseId provided for adding sets)
 class ExerciseInfoScreen extends StatefulWidget {
   final String exerciseName;
-  final String exrxUrl;
-  final String gifUrl;
+
+  /// List of image URLs (typically 2: start and end position).
+  final List<String> imageUrls;
 
   /// If provided, sets can be added to this exercise in the active workout.
   final int? exerciseId;
@@ -39,8 +40,7 @@ class ExerciseInfoScreen extends StatefulWidget {
   const ExerciseInfoScreen({
     super.key,
     required this.exerciseName,
-    required this.exrxUrl,
-    this.gifUrl = '',
+    this.imageUrls = const [],
     this.exerciseId,
     this.targetSets = 0,
     this.targetReps = 0,
@@ -61,6 +61,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   final TextEditingController _manualDurationController = TextEditingController();
   late bool _isCardio;
   bool _useManualDuration = false;
+  int _currentImageIndex = 0;
+  Timer? _imageCycleTimer;
 
   List<Map<String, dynamic>> _history = [];
   bool _historyLoading = true;
@@ -72,6 +74,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     // Use provided isCardio if available, otherwise keyword-based detection initially
     _isCardio = widget.isCardio ?? ActiveExercise.detectCardio(widget.exerciseName);
     _loadHistory();
+    _startImageCycle();
 
     // Async lookup from exercise library for more accurate cardio detection
     if (widget.isCardio == null) {
@@ -105,6 +108,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
   @override
   void dispose() {
+    _imageCycleTimer?.cancel();
     _weightController.dispose();
     _repsController.dispose();
     _commentController.dispose();
@@ -112,8 +116,20 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     super.dispose();
   }
 
+  /// Start auto-cycling between exercise images (GIF-like effect).
+  void _startImageCycle() {
+    if (widget.imageUrls.length <= 1) return;
+    _imageCycleTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) {
+      if (mounted) {
+        setState(() {
+          _currentImageIndex = (_currentImageIndex + 1) % widget.imageUrls.length;
+        });
+      }
+    });
+  }
+
   Future<void> _detectCardioFromLibrary() async {
-    final muscleGroup = await ExrxUrlMatcher.findMuscleGroup(widget.exerciseName);
+    final muscleGroup = await ExerciseDB.findMuscleGroup(widget.exerciseName);
     final result = ActiveExercise.detectCardio(widget.exerciseName, muscleGroup: muscleGroup);
     if (result != _isCardio && mounted) {
       setState(() {
@@ -143,12 +159,16 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     }
   }
 
-  Future<void> _launchUrl() async {
-    if (widget.exrxUrl.isEmpty) return;
-    final uri = Uri.parse(widget.exrxUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  /// Toggle between exercise images (start/end position).
+  /// Also resets the auto-cycle timer so the next auto-switch doesn't come too soon.
+  void _toggleImage() {
+    if (widget.imageUrls.length <= 1) return;
+    setState(() {
+      _currentImageIndex = (_currentImageIndex + 1) % widget.imageUrls.length;
+    });
+    // Reset timer on manual tap
+    _imageCycleTimer?.cancel();
+    _startImageCycle();
   }
 
   /// Show a bottom sheet with alternative exercises from the same muscle group.
@@ -157,7 +177,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     final theme = Theme.of(context);
 
     // 1. Find current exercise's muscle group
-    final muscleGroup = await ExrxUrlMatcher.findMuscleGroup(widget.exerciseName);
+    final muscleGroup = await ExerciseDB.findMuscleGroup(widget.exerciseName);
     if (!mounted) return;
     if (muscleGroup.isEmpty) {
       messenger.showSnackBar(
@@ -167,7 +187,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     }
 
     // 2. Get all exercises in the same muscle group
-    final alternatives = await ExrxUrlMatcher.getExercisesByMuscleGroup(muscleGroup);
+    final alternatives = await ExerciseDB.getExercisesByMuscleGroup(muscleGroup);
     // Remove current exercise from alternatives
     alternatives.removeWhere((e) => (e['name'] as String).toLowerCase() == widget.exerciseName.toLowerCase());
 
@@ -222,12 +242,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                 itemBuilder: (_, i) {
                   final alt = alternatives[i];
                   final name = alt['name'] as String;
-                  final gifUrl = (alt['gif_url'] ?? '').toString();
+                  final imageUrl = (alt['image_url'] ?? '').toString();
                   return ListTile(
-                    leading: gifUrl.isNotEmpty
+                    leading: imageUrl.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(gifUrl, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, e, st) => Container(
+                            child: Image.network(imageUrl, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, e, st) => Container(
                               width: 50, height: 50,
                               decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
                               child: Icon(Icons.fitness_center, color: theme.colorScheme.onSurfaceVariant, size: 20),
@@ -383,22 +403,21 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     ),
                     const SizedBox(width: 4),
                   ],
-                  _buildCircularButton(
-                    icon: Icons.open_in_new,
-                    onTap: _launchUrl,
-                    theme: theme,
-                    color: theme.colorScheme.secondary,
-                  ),
                   const SizedBox(width: 8),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // GIF or placeholder
-                      widget.gifUrl.isNotEmpty
-                          ? Image.network(
-                              widget.gifUrl,
+                      // Tap-to-toggle exercise images (start/end position)
+                      if (widget.imageUrls.isNotEmpty)
+                        GestureDetector(
+                          onTap: _toggleImage,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: Image.network(
+                              widget.imageUrls[_currentImageIndex],
+                              key: ValueKey(widget.imageUrls[_currentImageIndex]),
                               fit: BoxFit.cover,
                               loadingBuilder: (ctx, child, progress) {
                                 if (progress == null) return child;
@@ -416,8 +435,32 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                                 );
                               },
                               errorBuilder: (_, e, st) => _buildNoGifPlaceholder(),
-                            )
-                          : _buildNoGifPlaceholder(),
+                            ),
+                          ),
+                        )
+                      else
+                        _buildNoGifPlaceholder(),
+                      // Image index indicator (1/2 dot)
+                      if (widget.imageUrls.length > 1)
+                        Positioned(
+                          top: kToolbarHeight + MediaQuery.of(context).padding.top + 4,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(widget.imageUrls.length, (i) => Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i == _currentImageIndex
+                                    ? theme.colorScheme.secondary
+                                    : Colors.white.withValues(alpha: 0.4),
+                              ),
+                            )),
+                          ),
+                        ),
                       // Bottom gradient overlay for readability
                       Positioned(
                         bottom: 0,

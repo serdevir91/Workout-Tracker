@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 import 'exercise_info_screen.dart';
 
 /// Wrapper that enables swipe navigation between exercises during a workout.
@@ -26,7 +26,7 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
   late int _currentIndex;
 
   // Cache exercise lookup results to avoid repeated async lookups
-  final Map<String, Map<String, String>> _exerciseLookupCache = {};
+  final Map<String, Map<String, dynamic>> _exerciseLookupCache = {};
 
   @override
   void initState() {
@@ -46,12 +46,9 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
   Future<void> _prefetchExerciseInfo() async {
     for (final ex in widget.exercises) {
       if (!_exerciseLookupCache.containsKey(ex.exercise.name)) {
-        final result = await ExrxUrlMatcher.findExercise(ex.exercise.name);
+        final result = await ExerciseDB.findExercise(ex.exercise.name);
         if (result != null && mounted) {
-          _exerciseLookupCache[ex.exercise.name] = {
-            'url': result['url'] ?? '',
-            'gif_url': result['gif_url'] ?? '',
-          };
+          _exerciseLookupCache[ex.exercise.name] = result;
           // Trigger rebuild so pages get their info
           setState(() {});
         }
@@ -79,11 +76,13 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
           itemBuilder: (context, index) {
             final activeEx = widget.exercises[index];
             final cached = _exerciseLookupCache[activeEx.exercise.name];
+            final images = (cached?['images'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ?? [];
 
             return ExerciseInfoScreen(
               exerciseName: activeEx.exercise.name,
-              exrxUrl: cached?['url'] ?? '',
-              gifUrl: cached?['gif_url'] ?? '',
+              imageUrls: images,
               exerciseId: activeEx.exercise.id,
               targetSets: activeEx.targetSets,
               targetReps: activeEx.targetReps,

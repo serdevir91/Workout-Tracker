@@ -1,13 +1,15 @@
 # Workout Tracker — Proje Rehberi (Agent Reference)
 
 > Bu dosya AI agent'ların projeyi hızlıca anlaması için oluşturulmuştur.
-> Son güncelleme: 27 Şubat 2026
+> Son güncelleme: 2 Mart 2026
 
 ---
 
 ## Genel Bakış
 Flutter ile yazılmış bir antrenman takip uygulaması. Android + Windows + Web desteği var.
-State management: **Provider**. Veritabanı: **SQLite (sqflite)**. ORM yok, ham SQL kullanılıyor.
+State management: **Provider**. Veritabanı: **SQLite (sqflite)** şema v13. ORM yok, ham SQL kullanılıyor.
+Egzersiz veritabanı: **free-exercise-db** (873 egzersiz, public domain / Unlicense).
+Görsel kaynağı: GitHub CDN üzerinden JPG resimler, otomatik GIF-benzeri animasyonlu gösterim.
 Tema: Koyu glassmorphism UI. Renk paleti: Mor `#6C63FF`, Mint yeşil `#00D4AA`, Hata kırmızı `#FF6B6B`, Arka plan `#0F0F23`.
 
 ---
@@ -44,13 +46,12 @@ Workout-Tracker/
 │   │   └── workout_schedule_screen.dart   # Haftalık program
 │   ├── utils/
 │   │   ├── formatters.dart                # Süre, tarih, sayı formatlama
-│   │   ├── exrx_url_matcher.dart          # Egzersiz → ExRx URL + kas grubu eşleme
-│   │   └── image_mapper.dart              # Egzersiz adı → GIF URL eşleme
+│   │   └── exercise_db.dart               # free-exercise-db utility: findExercise, findMuscleGroup, imageUrl vb.
 │   └── widgets/
-│       └── exercise_thumbnail.dart        # Egzersiz küçük resim widget'ı
+│       └── exercise_thumbnail.dart        # Egzersiz küçük resim widget'ı (LRU cache)
 ├── assets/
 │   ├── data/
-│   │   └── exrx_exercises.json            # Tüm egzersiz veritabanı (isim, URL, GIF, kas grubu)
+│   │   └── free_exercises.json            # 873 egzersiz (free-exercise-db, Unlicense)
 │   ├── images/                            # Uygulama görselleri
 │   └── screenshots/                       # Mağaza ekran görüntüleri
 ├── android/
@@ -68,7 +69,7 @@ Workout-Tracker/
 
 ---
 
-## Veritabanı Şeması (v8)
+## Veritabanı Şeması (v13)
 
 | Tablo | Sütunlar | İlişki |
 |-------|----------|--------|
@@ -187,7 +188,6 @@ HomeScreen (dashboard)
 | `provider` | ^6.1.5+1 | State management |
 | `intl` | ^0.20.2 | Tarih/sayı formatlama |
 | `table_calendar` | ^3.2.0 | Takvim widget |
-| `url_launcher` | ^6.3.1 | URL açma |
 | `file_picker` | ^8.1.7 | Dosya/klasör seçici (backup) |
 | `meta` | ^1.11.0 | Annotation'lar |
 | `cupertino_icons` | ^1.0.8 | iOS ikonları |
@@ -233,7 +233,8 @@ Cardio UI: Büyük timer gösterimi + Start/Stop butonu + "Save (X min)" butonu.
 7. ~~**Backup** PathAccessException~~ → permission_handler ile çözüldü
 8. Tüm grafikler `CustomPainter` ile çiziliyor — charting kütüphanesi yok
 9. **Foreground service** yok — agresif OEM'lerde (Xiaomi, Samsung) arka plan timer durabilir
-10. Cardio geçmişi exercise_info & summary ekranlarında hâlâ "X kg x Y reps" formatında (süre formatı eklenmedi)
+10. ~~Cardio geçmişi exercise_info & summary ekranlarında hâlâ "X kg x Y reps" formatında~~ → Düzeltildi
+11. ~~**ExRx.net lisanslama sorunu**~~ → free-exercise-db (Unlicense) ile değiştirildi
 
 ---
 

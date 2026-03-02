@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
 import '../providers/settings_provider.dart';
 import '../l10n/translations.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 import '../utils/formatters.dart';
 import '../widgets/exercise_thumbnail.dart';
 
@@ -38,7 +38,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     for (final exData in exercises) {
       final name = exData['exercise'].name as String;
       if (!cardioMap.containsKey(name)) {
-        final muscleGroup = await ExrxUrlMatcher.findMuscleGroup(name);
+        final muscleGroup = await ExerciseDB.findMuscleGroup(name);
         cardioMap[name] = ActiveExercise.detectCardio(name, muscleGroup: muscleGroup);
       }
     }

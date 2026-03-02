@@ -4,7 +4,7 @@ import '../db/database_helper.dart';
 import '../models/workout_models.dart';
 import '../models/workout_plan_models.dart';
 import '../services/notification_service.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 
 class ActiveExercise {
   Exercise exercise;
@@ -247,7 +247,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
           _activeExercises = [];
           for (var ex in exercises) {
             final sets = await _db.getSetsByExerciseId(ex.id!);
-            final muscleGroup = await ExrxUrlMatcher.findMuscleGroup(ex.name);
+            final muscleGroup = await ExerciseDB.findMuscleGroup(ex.name);
             _activeExercises.add(ActiveExercise(exercise: ex, sets: sets, isCardio: ActiveExercise.detectCardio(ex.name, muscleGroup: muscleGroup)));
             _exerciseElapsedSeconds[ex.id!] = ex.duration;
             
@@ -568,7 +568,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
       final planEx = plan.exercises[i];
       final exerciseId = await _db.createExercise(workoutId, planEx.name, i + 1);
 
-      final muscleGroupPlan = await ExrxUrlMatcher.findMuscleGroup(planEx.name);
+      final muscleGroupPlan = await ExerciseDB.findMuscleGroup(planEx.name);
       final activeEx = ActiveExercise(
         exercise: Exercise(
           id: exerciseId,

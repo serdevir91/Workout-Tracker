@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_plan_models.dart';
 import '../providers/workout_provider.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 import 'exercise_info_screen.dart';
 import 'settings_screen.dart';
 
@@ -61,8 +61,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   Future<void> _loadExercises() async {
     try {
-      // Use shared cache from ExrxUrlMatcher (avoids re-loading JSON)
-      final data = await ExrxUrlMatcher.getAllExercises();
+      // Use shared cache from ExerciseDB (avoids re-loading JSON)
+      final data = await ExerciseDB.getAllExercises();
       final exercises = data
           .where((e) => (e['name'] as String).length > 2)
           .toList()
@@ -272,7 +272,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   Widget _buildGridCard(Map<String, dynamic> exercise) {
     final name = exercise['name'] as String;
-    final gifUrl = exercise['gif_url'] as String? ?? '';
+    final imageUrl = exercise['image_url'] as String? ?? '';
     final muscleGroup = exercise['muscle_group'] as String? ?? '';
     final meta = _getMeta(muscleGroup);
 
@@ -299,9 +299,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 fit: StackFit.expand,
                 children: [
                   Container(color: Theme.of(context).colorScheme.surface),
-                  if (gifUrl.isNotEmpty)
+                  if (imageUrl.isNotEmpty)
                     Image.network(
-                      gifUrl,
+                      imageUrl,
                       fit: BoxFit.contain,
                       cacheWidth: (120 * MediaQuery.devicePixelRatioOf(context)).toInt(),
                       errorBuilder: (_, _, _) => Center(
@@ -359,7 +359,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                       top: 6,
                       right: 6,
                       child: GestureDetector(
-                        onTap: () => Navigator.pop(context, name),
+                        onTap: () => Navigator.pop(context, {'name': name, 'muscle_group': muscleGroup}),
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -413,7 +413,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   Widget _buildListTile(Map<String, dynamic> exercise) {
     final name = exercise['name'] as String;
-    final gifUrl = exercise['gif_url'] as String? ?? '';
+    final imageUrl = exercise['image_url'] as String? ?? '';
     final muscleGroup = exercise['muscle_group'] as String? ?? '';
     final meta = _getMeta(muscleGroup);
 
@@ -441,9 +441,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               clipBehavior: Clip.antiAlias,
-              child: gifUrl.isNotEmpty
+              child: imageUrl.isNotEmpty
                   ? Image.network(
-                      gifUrl,
+                      imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => Center(
                         child: Icon(Icons.fitness_center_rounded,
@@ -500,7 +500,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 onPressed: () =>
-                    Navigator.pop(context, exercise['name'] as String),
+                    Navigator.pop(context, {'name': name, 'muscle_group': muscleGroup}),
               )
             else
               Icon(Icons.chevron_right_rounded,
@@ -516,8 +516,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // ═══════════════════════════════════════════
   void _onExerciseTap(Map<String, dynamic> exercise) {
     final name = exercise['name'] as String;
-    final url = exercise['url'] as String;
-    final gifUrl = exercise['gif_url'] as String? ?? '';
+    final images = (exercise['images'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList() ?? [];
 
     if (widget.pickMode) {
       final muscleGroup = exercise['muscle_group'] as String? ?? 'Other';
@@ -530,8 +531,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       MaterialPageRoute(
         builder: (_) => ExerciseInfoScreen(
           exerciseName: name,
-          exrxUrl: url,
-          gifUrl: gifUrl,
+          imageUrls: images,
         ),
       ),
     );

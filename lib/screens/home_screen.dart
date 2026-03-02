@@ -6,7 +6,7 @@ import '../models/workout_plan_models.dart';
 import '../models/workout_models.dart';
 import '../providers/workout_provider.dart';
 import '../utils/formatters.dart';
-import '../utils/exrx_url_matcher.dart';
+import '../utils/exercise_db.dart';
 import '../l10n/translations.dart';
 import '../db/database_helper.dart';
 import 'active_workout_screen.dart';
@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = context.read<WorkoutProvider>();
     final startDate = _periodToStartDate(_muscleGroupPeriod);
     final exerciseSets = await provider.getExerciseSetCountsByPeriod(startDate);
-    final muscleMap = await ExrxUrlMatcher.buildMuscleGroupMap();
+    final muscleMap = await ExerciseDB.buildMuscleGroupMap();
 
     final Map<String, double> grouped = {};
     for (final row in exerciseSets) {
