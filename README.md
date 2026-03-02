@@ -124,12 +124,12 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v2.2.0)
+## 📋 What's New (v2.2.1)
 
 - **Redesigned Exercise Detail Screen** — Hero GIF with SliverAppBar, card-based metrics, modern history cards with LIVE badge
 - **First Day of Week Setting** — Choose Monday, Saturday, or Sunday; workout plans sort accordingly
 - **Add Exercise from Library** — Tap "Add to Workout" from exercise detail to add it to any workout plan
-- **Exercise Counter Repositioned** — Swipe indicator (1/8) moved to bottom-left for better visibility
+- **Exercise Counter Repositioned** — Swipe indicator (1/8) now sits right below the sets counter badge
 - **Workout Plan Sorting** — Next training cards respect first day of week setting
 - **Alternative Exercise Swap** — Quick swap button in exercise detail AppBar
 
