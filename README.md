@@ -158,6 +158,22 @@ flutter build windows
 </details>
 
 <details>
+<summary>v2.0.0 Changes</summary>
+
+- **Exercise library overhaul** — 526+ exercises with ExRx.net GIF demonstrations
+- **Workout Plans & Routines** — Create custom routines and assign to specific days
+- **Workout Schedule** — Calendar-based weekly schedule with configurable workout days
+- **Post-workout Summary** — Calories burned, total time, and total volume overview
+- **Stats Dashboard** — Total workouts, volume, duration, and sets with session breakdown
+- **Body Progress Charts** — Track weight, arm, waist, chest and more with line charts
+- **Multi-Language Support** — English and Turkish localization
+- **Settings & Profile** — Theme, language, weight unit (kg/lbs), height, body measurements
+- **Notification Service** — Rest timer and workout reminder notifications
+- **Improved data models** — Pydantic-style validation for workout data
+
+</details>
+
+<details>
 <summary>v1.0.0 — Initial Release</summary>
 
 - Core workout tracking with sets, reps, and weight logging
