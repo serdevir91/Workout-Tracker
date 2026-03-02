@@ -135,4 +135,24 @@ class ExrxUrlMatcher {
     _muscleGroupMapCache = map;
     return map;
   }
+
+  /// Get all exercises belonging to a specific muscle group.
+  /// Returns a list of maps with 'name', 'url', 'gif_url' keys.
+  static Future<List<Map<String, String>>> getExercisesByMuscleGroup(String muscleGroup) async {
+    await _ensureLoaded();
+    if (_exercises == null || _exercises!.isEmpty) return [];
+    final lower = muscleGroup.toLowerCase().trim();
+    final results = <Map<String, String>>[];
+    for (final ex in _exercises!) {
+      final group = (ex['muscle_group'] as String? ?? '').toLowerCase();
+      if (group == lower) {
+        results.add({
+          'name': ex['name'] as String? ?? '',
+          'url': ex['url'] as String? ?? '',
+          'gif_url': ex['gif_url'] as String? ?? '',
+        });
+      }
+    }
+    return results;
+  }
 }

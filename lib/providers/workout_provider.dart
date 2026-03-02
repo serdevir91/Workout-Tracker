@@ -128,6 +128,15 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   final Map<int, String> _draftReps = {};
   final Map<String, Map<String, dynamic>> _lastExerciseStats = {};
 
+  // Track which exercise the user is currently viewing (for notification)
+  int _currentViewingExerciseIndex = -1;
+  int get currentViewingExerciseIndex => _currentViewingExerciseIndex;
+
+  void setCurrentViewingExercise(int index) {
+    _currentViewingExerciseIndex = index;
+    _updateNotification();
+  }
+
   WorkoutProvider() {
     WidgetsBinding.instance.addObserver(this);
   }
@@ -329,6 +338,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     _exerciseElapsedSeconds = {};
     _lastExerciseStats.clear();
     _activeCardioTimerIds.clear();
+    _currentViewingExerciseIndex = -1;
     _workoutStartedAt = null;
     _totalPausedSeconds = 0;
     _manualPauseStartedAt = null;
@@ -485,6 +495,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
       _exerciseElapsedSeconds = {};
       _lastExerciseStats.clear();
       _activeCardioTimerIds.clear();
+      _currentViewingExerciseIndex = -1;
       _workoutStartedAt = null;
       _totalPausedSeconds = 0;
       _manualPauseStartedAt = null;
@@ -683,8 +694,17 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     String? currentExName;
     for (var ex in _activeExercises) {
       totalSets += ex.sets.where((s) => s.completed).length;
-      if (ex.exercise.endTime == null) {
-        currentExName = ex.exercise.name;
+    }
+    
+    // Use the currently viewed exercise if available
+    if (_currentViewingExerciseIndex >= 0 && _currentViewingExerciseIndex < _activeExercises.length) {
+      currentExName = _activeExercises[_currentViewingExerciseIndex].exercise.name;
+    } else if (_activeExercises.isNotEmpty) {
+      // Fallback: last exercise with no end time
+      for (var ex in _activeExercises) {
+        if (ex.exercise.endTime == null) {
+          currentExName = ex.exercise.name;
+        }
       }
     }
     

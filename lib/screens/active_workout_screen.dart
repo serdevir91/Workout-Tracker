@@ -691,82 +691,97 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context, WorkoutProvider provider) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
-      ),
-      child: Row(
-        children: [
-          // Cancel button
-          ElevatedButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-                  title: Text(Translations.of(context).get('cancel'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  content: Text(Translations.of(context).get('delete_workout_confirm'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(Translations.of(context).get('cancel'))),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        provider.cancelWorkout();
-                        Navigator.pop(context);
-                      },
-                      child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
-                    )
-                  ],
-                ),
-              );
-            },
-            icon: const Icon(Icons.close, size: 20),
-            label: Text(Translations.of(context).get('cancel')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-              foregroundColor: const Color(0xFFFF6B6B),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-              side: const BorderSide(color: Color(0xFFFF6B6B)),
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
             ),
-          ),
-          const SizedBox(width: 8),
-          // Add Exercise button
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push<Map<String, String>>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen(pickMode: true)),
-                );
-                if (result != null && result['name']!.isNotEmpty && context.mounted) {
-                  provider.addExercise(result['name']!, muscleGroup: result['muscle_group']);
-                }
-              },
-              icon: const Icon(Icons.add, size: 20),
-              label: Text(Translations.of(context).get('add_exercise')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                side: BorderSide(color: Theme.of(context).colorScheme.primary),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Cancel button - compact icon-only
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      title: Text(Translations.of(context).get('cancel'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                      content: Text(Translations.of(context).get('delete_workout_confirm'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(Translations.of(context).get('cancel'))),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            provider.cancelWorkout();
+                            Navigator.pop(context);
+                          },
+                          child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
+                        )
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.close, size: 22),
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  foregroundColor: const Color(0xFFFF6B6B),
+                  side: const BorderSide(color: Color(0xFFFF6B6B)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          // Finish button
-          ElevatedButton.icon(
-            onPressed: () => _finishWorkout(context, provider),
-            icon: const Icon(Icons.check_circle, size: 20),
-            label: Text(Translations.of(context).get('finish')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSurface,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            const SizedBox(width: 8),
+            // Add Exercise button - prominent center
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push<Map<String, String>>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen(pickMode: true)),
+                  );
+                  if (result != null && result['name']!.isNotEmpty && context.mounted) {
+                    provider.addExercise(result['name']!, muscleGroup: result['muscle_group']);
+                  }
+                },
+                icon: const Icon(Icons.add, size: 20),
+                label: Text(Translations.of(context).get('add_exercise')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  minimumSize: const Size(0, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            // Finish button - green, prominent
+            ElevatedButton.icon(
+              onPressed: () => _finishWorkout(context, provider),
+              icon: const Icon(Icons.check_circle, size: 20),
+              label: Text(Translations.of(context).get('finish')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Colors.black,
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

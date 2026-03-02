@@ -618,6 +618,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _getFirstDayLabel(SettingsProvider provider) {
+    switch (provider.firstDayOfWeek) {
+      case 1: return 'Monday';
+      case 6: return 'Saturday';
+      case 7: return 'Sunday';
+      default: return SettingsProvider.dayNames[(provider.firstDayOfWeek - 1).clamp(0, 6)];
+    }
+  }
+
+  void _showFirstDayOfWeekPicker(BuildContext context, SettingsProvider provider, Translations t) {
+    final options = [
+      {'key': '1', 'label': t.get('monday'), 'icon': Icons.calendar_today},
+      {'key': '6', 'label': t.get('saturday'), 'icon': Icons.calendar_today},
+      {'key': '7', 'label': t.get('sunday'), 'icon': Icons.calendar_today},
+    ];
+
+    _showOptionsPicker(
+      context: context,
+      title: t.get('first_day_of_week'),
+      options: options,
+      currentValue: provider.firstDayOfWeek.toString(),
+      onSelect: (val) => provider.updateFirstDayOfWeek(int.parse(val)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<SettingsProvider>();
@@ -675,6 +700,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: t.get('background_mode'),
               value: t.get(provider.isPureBlack ? 'pure_black' : 'bg_default'),
               onTap: () => _showBackgroundModePicker(context, provider, t),
+            ),
+            _buildSettingsTile(
+              icon: Icons.calendar_today,
+              iconColor: const Color(0xFF06D6A0),
+              title: t.get('first_day_of_week'),
+              value: _getFirstDayLabel(provider),
+              onTap: () => _showFirstDayOfWeekPicker(context, provider, t),
               isLast: true,
             ),
           ]),

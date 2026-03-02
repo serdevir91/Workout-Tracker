@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
 import '../utils/exrx_url_matcher.dart';
 import 'exercise_info_screen.dart';
@@ -34,6 +35,12 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
     _pageController = PageController(initialPage: widget.initialIndex);
     // Pre-fetch exercise info for all exercises
     _prefetchExerciseInfo();
+    // Notify provider of the initial viewing exercise
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<WorkoutProvider>().setCurrentViewingExercise(widget.initialIndex);
+      }
+    });
   }
 
   Future<void> _prefetchExerciseInfo() async {
@@ -67,6 +74,7 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
           itemCount: widget.exercises.length,
           onPageChanged: (index) {
             setState(() => _currentIndex = index);
+            context.read<WorkoutProvider>().setCurrentViewingExercise(index);
           },
           itemBuilder: (context, index) {
             final activeEx = widget.exercises[index];
@@ -86,45 +94,14 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
           },
         ),
 
-        // Page indicator dots at bottom
+        // Swipe hint overlay — positioned at bottom-left of hero area, above the exercise name
         if (widget.exercises.length > 1)
           Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.exercises.length, (i) {
-                  final isActive = i == _currentIndex;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: isActive ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-
-        // Swipe hint overlay (shown briefly)
-        if (widget.exercises.length > 1)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 56,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _SwipeHint(
-                currentIndex: _currentIndex,
-                totalCount: widget.exercises.length,
-              ),
+            bottom: 52,
+            left: 16,
+            child: _SwipeHint(
+              currentIndex: _currentIndex,
+              totalCount: widget.exercises.length,
             ),
           ),
       ],
@@ -154,6 +131,7 @@ class _SwipeHint extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurface,
           fontSize: 12,
           fontWeight: FontWeight.w600,
+          decoration: TextDecoration.none,
         ),
       ),
     );

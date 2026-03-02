@@ -17,11 +17,24 @@ class _StatsScreenState extends State<StatsScreen> {
   Map<String, num>? _stats;
   List<Map<String, dynamic>> _sessionStats = [];
   bool _isLoading = true;
+  int _lastKnownWorkoutCount = -1;
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Auto-refresh stats when workout list changes (reactive updates)
+    final provider = context.watch<WorkoutProvider>();
+    final currentCount = provider.workouts.length;
+    if (_lastKnownWorkoutCount != -1 && currentCount != _lastKnownWorkoutCount) {
+      _loadStats();
+    }
+    _lastKnownWorkoutCount = currentCount;
   }
 
   Future<void> _loadStats() async {
@@ -58,6 +71,19 @@ class _StatsScreenState extends State<StatsScreen> {
     final totalVolume = _stats?['totalVolume']?.toDouble() ?? 0.0;
     final totalSets = _stats?['totalSets']?.toInt() ?? 0;
 
+    // Compute averages for detail cards
+    final avgVolume = totalWorkouts > 0 ? totalVolume / totalWorkouts : 0.0;
+    final avgDuration = totalWorkouts > 0 ? totalDuration ~/ totalWorkouts : 0;
+    final avgSets = totalWorkouts > 0 ? (totalSets / totalWorkouts).toStringAsFixed(1) : '0';
+
+    // Find best workout (highest volume)
+    String bestWorkoutInfo = '';
+    if (_sessionStats.isNotEmpty) {
+      final best = _sessionStats.reduce((a, b) =>
+          ((a['total_volume'] as num).toDouble()) >= ((b['total_volume'] as num).toDouble()) ? a : b);
+      bestWorkoutInfo = '${best['name']} — ${context.read<SettingsProvider>().formatWeight((best['total_volume'] as num).toDouble())}';
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(Translations.of(context).get('stats')),
@@ -80,10 +106,14 @@ class _StatsScreenState extends State<StatsScreen> {
           const SizedBox(height: 12),
           Column(
             children: [
-              _buildExpandableStatCard(Translations.of(context).get('total_workouts'), '$totalWorkouts', Icons.fitness_center, Theme.of(context).colorScheme.primary, ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_volume'), context.read<SettingsProvider>().formatWeight(totalVolume), Icons.monitor_weight_outlined, Theme.of(context).colorScheme.secondary, ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_duration'), formatDuration(totalDuration), Icons.timer_outlined, const Color(0xFFFF6B6B), ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_sets'), '$totalSets', Icons.repeat, const Color(0xFFFFAE42), ''),
+              _buildExpandableStatCard(Translations.of(context).get('total_workouts'), '$totalWorkouts', Icons.fitness_center, Theme.of(context).colorScheme.primary,
+                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_volume_per_workout')}: ${context.read<SettingsProvider>().formatWeight(avgVolume)}\n${Translations.of(context).get('avg_sets_per_workout')}: $avgSets' : ''),
+              _buildExpandableStatCard(Translations.of(context).get('total_volume'), context.read<SettingsProvider>().formatWeight(totalVolume), Icons.monitor_weight_outlined, Theme.of(context).colorScheme.secondary,
+                  bestWorkoutInfo.isNotEmpty ? '${Translations.of(context).get('best_workout')}: $bestWorkoutInfo' : ''),
+              _buildExpandableStatCard(Translations.of(context).get('total_duration'), formatDuration(totalDuration), Icons.timer_outlined, const Color(0xFFFF6B6B),
+                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_duration_per_workout')}: ${formatDuration(avgDuration)}' : ''),
+              _buildExpandableStatCard(Translations.of(context).get('total_sets'), '$totalSets', Icons.repeat, const Color(0xFFFFAE42),
+                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_sets_per_workout')}: $avgSets per workout' : ''),
             ],
           ),
           const SizedBox(height: 32),
@@ -181,13 +211,23 @@ class _StatsScreenState extends State<StatsScreen> {
         child: ExpansionTile(
           collapsedIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
           iconColor: Theme.of(context).colorScheme.onSurface,
-          title: Row(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
-              Text('${totalVolume.toStringAsFixed(0)} kg', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
+              Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis, maxLines: 1),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text('${totalVolume.toStringAsFixed(0)} kg', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  Text('•', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+                  const SizedBox(width: 8),
+                  Text(formatDuration(duration), style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                ],
+              ),
             ],
           ),
-          subtitle: Text('${date.day}/${date.month}/${date.year} • ${formatDuration(duration)}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          subtitle: Text('${date.day}/${date.month}/${date.year}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -207,8 +247,8 @@ class _StatsScreenState extends State<StatsScreen> {
                 final exSets = ex['sets'] as int;
                 final exReps = ex['reps'] as int;
                 final maxWeight = (ex['max_weight'] as num?)?.toDouble() ?? 0.0;
-                final duration = (ex['duration'] as int?) ?? 0;
-                final durationStr = '${(duration ~/ 60).toString().padLeft(2, '0')}:${(duration % 60).toString().padLeft(2, '0')}';
+                final exDuration = (ex['duration'] as int?) ?? 0;
+                final durationStr = '${(exDuration ~/ 60).toString().padLeft(2, '0')}:${(exDuration % 60).toString().padLeft(2, '0')}';
                 final isCardioEx = ActiveExercise.detectCardio(exName) || (maxWeight == 0 && exReps > 0 && exSets <= 2);
                 
                 return Padding(

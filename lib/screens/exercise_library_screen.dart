@@ -1,5 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/workout_plan_models.dart';
+import '../providers/workout_provider.dart';
 import '../utils/exrx_url_matcher.dart';
 import 'exercise_info_screen.dart';
 import 'settings_screen.dart';
@@ -275,6 +278,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     return GestureDetector(
       onTap: () => _onExerciseTap(exercise),
+      onLongPress: () => _onExerciseLongPress(exercise),
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -415,6 +419,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     return InkWell(
       onTap: () => _onExerciseTap(exercise),
+      onLongPress: () => _onExerciseLongPress(exercise),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.all(10),
@@ -527,6 +532,87 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           exerciseName: name,
           exrxUrl: url,
           gifUrl: gifUrl,
+        ),
+      ),
+    );
+  }
+
+  /// Show an "Add to workout plan" dialog for exercises tapped via long press
+  void _onExerciseLongPress(Map<String, dynamic> exercise) {
+    final name = exercise['name'] as String;
+    if (widget.pickMode) return; // no long press action in pick mode
+
+    final provider = context.read<WorkoutProvider>();
+    final plans = provider.workoutPlans;
+
+    if (plans.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Create a workout plan first'),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Icon(Icons.add_circle, color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Add "$name" to workout plan',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: Theme.of(context).colorScheme.outline),
+            ...plans.map((plan) => ListTile(
+              leading: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(child: Text('D${plan.dayNumber}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12))),
+              ),
+              title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              subtitle: Text('${plan.exercises.length} exercises', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                // Add exercise to the plan
+                final updatedPlan = plan.copyWith(
+                  exercises: [...plan.exercises, PlanExercise(name: name, sets: 3, reps: 10, weight: 0)],
+                );
+                await provider.saveWorkoutPlan(updatedPlan);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Added "$name" to ${plan.name}'),
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                  );
+                }
+              },
+            )),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );

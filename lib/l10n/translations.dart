@@ -194,6 +194,21 @@ class Translations {
       'friday': 'Friday',
       'saturday': 'Saturday',
       'sunday': 'Sunday',
+
+      // New features
+      'alternative_exercise': 'Alternative Exercise',
+      'swap_exercise': 'Swap Exercise',
+      'same_muscle_group': 'Same muscle group alternatives',
+      'add_to_workout': 'Add to Workout',
+      'select_workout': 'Select Workout',
+      'manual_duration': 'Manual Duration',
+      'enter_duration_min': 'Enter duration (min)',
+      'first_day_of_week': 'First Day of Week',
+      'avg_volume_per_workout': 'Avg volume per workout',
+      'avg_duration_per_workout': 'Avg duration per workout',
+      'avg_sets_per_workout': 'Avg sets per workout',
+      'best_workout': 'Best workout',
+      'day': 'Day',
     },
 
     // ═══════════════════════════════════════════════════
@@ -356,6 +371,21 @@ class Translations {
       'friday': 'Cuma',
       'saturday': 'Cumartesi',
       'sunday': 'Pazar',
+
+      // New features
+      'alternative_exercise': 'Alternatif Egzersiz',
+      'swap_exercise': 'Egzersiz Değiştir',
+      'same_muscle_group': 'Aynı kas grubu alternatifleri',
+      'add_to_workout': 'Antrenmana Ekle',
+      'select_workout': 'Antrenman Seç',
+      'manual_duration': 'Manuel Süre',
+      'enter_duration_min': 'Süre girin (dk)',
+      'first_day_of_week': 'Haftanın İlk Günü',
+      'avg_volume_per_workout': 'Antrenman başına ort. hacim',
+      'avg_duration_per_workout': 'Antrenman başına ort. süre',
+      'avg_sets_per_workout': 'Antrenman başına ort. set',
+      'best_workout': 'En iyi antrenman',
+      'day': 'Gün',
     },
 
     // ═══════════════════════════════════════════════════
@@ -518,6 +548,21 @@ class Translations {
       'friday': 'Viernes',
       'saturday': 'Sábado',
       'sunday': 'Domingo',
+
+      // New features
+      'alternative_exercise': 'Ejercicio Alternativo',
+      'swap_exercise': 'Cambiar Ejercicio',
+      'same_muscle_group': 'Alternativas del mismo grupo muscular',
+      'add_to_workout': 'Agregar al Entrenamiento',
+      'select_workout': 'Seleccionar Entrenamiento',
+      'manual_duration': 'Duración Manual',
+      'enter_duration_min': 'Ingrese duración (min)',
+      'first_day_of_week': 'Primer día de la semana',
+      'avg_volume_per_workout': 'Volumen promedio por entrenamiento',
+      'avg_duration_per_workout': 'Duración promedio por entrenamiento',
+      'avg_sets_per_workout': 'Series promedio por entrenamiento',
+      'best_workout': 'Mejor entrenamiento',
+      'day': 'Día',
     },
   };
 }

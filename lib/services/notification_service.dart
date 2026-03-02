@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../utils/formatters.dart';
 
 /// Service for managing workout notifications in the system tray.
 /// Shows a persistent notification during active workouts with:
@@ -112,23 +113,21 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await init();
 
-    final minutes = elapsedSeconds ~/ 60;
-    final seconds = elapsedSeconds % 60;
-    final timeStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final timeStr = formatDuration(elapsedSeconds);
 
     final title = '$workoutName — $timeStr';
 
     // Build rich body with multiple info lines
     final bodyParts = <String>[];
     
-    if (restTimerSeconds > 0) {
-      final restMin = restTimerSeconds ~/ 60;
-      final restSec = restTimerSeconds % 60;
-      bodyParts.add('Rest: ${restMin.toString().padLeft(2, '0')}:${restSec.toString().padLeft(2, '0')}');
+    // Don't include rest timer info here — it has its own separate notification
+    
+    if (currentExerciseName != null && currentExerciseName.isNotEmpty) {
+      bodyParts.add('🏋️ $currentExerciseName');
     }
     
     if (lastSetInfo != null && lastSetInfo.isNotEmpty) {
-      bodyParts.add(lastSetInfo);
+      bodyParts.add('Last: $lastSetInfo');
     }
     
     if (exerciseCount > 0 || totalSets > 0) {
@@ -136,10 +135,6 @@ class NotificationService {
       if (exerciseCount > 0) statsLine.add('$exerciseCount exercises');
       if (totalSets > 0) statsLine.add('$totalSets sets');
       bodyParts.add(statsLine.join(' · '));
-    }
-    
-    if (currentExerciseName != null && currentExerciseName.isNotEmpty) {
-      bodyParts.add(currentExerciseName);
     }
 
     final body = bodyParts.isNotEmpty 
@@ -163,9 +158,7 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await init();
 
-    final min = remainingSeconds ~/ 60;
-    final sec = remainingSeconds % 60;
-    final timeStr = '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+    final timeStr = formatDuration(remainingSeconds);
 
     final title = 'Rest Time — $timeStr';
     final progress = ((totalSeconds - remainingSeconds) / totalSeconds * 100).round();

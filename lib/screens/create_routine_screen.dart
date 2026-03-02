@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_plan_models.dart';
 import '../providers/workout_provider.dart';
+import '../widgets/exercise_thumbnail.dart';
 import 'exercise_library_screen.dart';
 
 class CreateRoutineScreen extends StatefulWidget {
@@ -350,6 +351,8 @@ class _ExerciseCardState extends State<_ExerciseCard> {
             Row(
               children: [
                 Icon(Icons.drag_indicator, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                ExerciseThumbnail(exerciseName: widget.exercise.name, size: 40),
                 const SizedBox(width: 8),
                 if (_isCardio) ...[
                   Icon(Icons.directions_run, color: Theme.of(context).colorScheme.secondary, size: 18),

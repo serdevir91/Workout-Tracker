@@ -320,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(Translations.of(context).get('no_routines_created'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           )
         else
-          ...provider.workoutPlans.map((plan) => _buildRoutineCard(context, provider, plan)),
+          ..._getSortedPlans(provider).map((plan) => _buildRoutineCard(context, provider, plan)),
 
         const SizedBox(height: 32),
         Text(Translations.of(context).get('all_past_workouts'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
@@ -333,7 +333,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Sort workout plans by day number, starting from the configured first day of the week.
+  List<WorkoutPlan> _getSortedPlans(WorkoutProvider provider) {
+    final settings = context.read<SettingsProvider>();
+    final firstDay = settings.firstDayOfWeek;
+    final plans = List<WorkoutPlan>.from(provider.workoutPlans);
+    plans.sort((a, b) {
+      // Adjust day numbers relative to first day of week
+      final dayA = ((a.dayNumber - firstDay) % 7 + 7) % 7;
+      final dayB = ((b.dayNumber - firstDay) % 7 + 7) % 7;
+      return dayA.compareTo(dayB);
+    });
+    return plans;
+  }
+
   Widget _buildRoutineCard(BuildContext context, WorkoutProvider provider, WorkoutPlan plan) {
+     final settings = context.read<SettingsProvider>();
+     final dayName = settings.getDayName(plan.dayNumber);
      return Card(
        key: ValueKey('plan_${plan.id}'),
        color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -341,8 +357,22 @@ class _HomeScreenState extends State<HomeScreen> {
        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
        child: ListTile(
          contentPadding: const EdgeInsets.all(16),
+         leading: Container(
+           width: 44,
+           height: 44,
+           decoration: BoxDecoration(
+             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+             borderRadius: BorderRadius.circular(10),
+           ),
+           child: Center(
+             child: Text(
+               dayName,
+               style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12),
+             ),
+           ),
+         ),
          title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-         subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+         subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')} • ${Translations.of(context).get('day')} ${plan.dayNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
          trailing: Row(
            mainAxisSize: MainAxisSize.min,
            children: [
@@ -1028,7 +1058,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _buildNextTrainingCards(WorkoutProvider provider, SettingsProvider settings) {
-    final plans = provider.workoutPlans;
+    final plans = _getSortedPlans(provider);
     
     if (plans.isEmpty) {
        return [
@@ -1799,7 +1829,14 @@ class _BodyProgressPainter extends CustomPainter {
       tp.paint(canvas, Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2));
 
       // Date label below x-axis
-      final dateStr = (data[i]['date'] as String?)?.substring(5) ?? '';  // MM-DD
+      final rawDate = data[i]['date'] as String? ?? '';
+      String dateStr = '';
+      if (rawDate.length >= 10) {
+        final dt = DateTime.tryParse(rawDate);
+        if (dt != null) {
+          dateStr = '${dt.day}/${dt.month}';
+        }
+      }
       final dateTp = TextPainter(
         text: TextSpan(text: dateStr, style: TextStyle(color: labelColor, fontSize: 8)),
         textDirection: TextDirection.ltr,

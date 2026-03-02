@@ -57,7 +57,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 12, // v12: background mode setting
+      version: 13, // v13: first_day_of_week setting
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -130,7 +130,8 @@ class DatabaseHelper {
         auto_positioning INTEGER DEFAULT 0,
         workout_days TEXT DEFAULT '1,2,3,4,5,6,7',
         color_palette TEXT DEFAULT 'default',
-        background_mode TEXT DEFAULT 'default'
+        background_mode TEXT DEFAULT 'default',
+        first_day_of_week INTEGER DEFAULT 1
       )
     ''');
     await db.execute("INSERT INTO user_settings (id) VALUES (1)");
@@ -323,6 +324,9 @@ class DatabaseHelper {
     }
     if (oldVersion < 12) {
       try { await db.execute("ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'default'"); } catch (_) {}
+    }
+    if (oldVersion < 13) {
+      try { await db.execute('ALTER TABLE user_settings ADD COLUMN first_day_of_week INTEGER DEFAULT 1'); } catch (_) {}
     }
   }
 

@@ -138,6 +138,7 @@ class SettingsProvider with ChangeNotifier {
   bool _displayAllData = true;
   bool _autoPositioning = false;
   List<int> _workoutDays = [1, 2, 3, 4, 5, 6, 7];
+  int _firstDayOfWeek = 1; // 1=Monday (ISO), 7=Sunday
 
   // Getters
   ThemeMode get themeMode => _themeMode;
@@ -175,6 +176,14 @@ class SettingsProvider with ChangeNotifier {
   bool get displayAllData => _displayAllData;
   bool get autoPositioning => _autoPositioning;
   List<int> get workoutDays => _workoutDays;
+  int get firstDayOfWeek => _firstDayOfWeek;
+
+  /// Get day name for a day number (1-7, ISO weekday).
+  static const List<String> dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  String getDayName(int dayNumber) {
+    if (dayNumber < 1 || dayNumber > 7) return '';
+    return dayNames[dayNumber - 1];
+  }
 
   // ── Display helpers (automatically convert based on system) ──
 
@@ -262,6 +271,7 @@ class SettingsProvider with ChangeNotifier {
 
         _colorPaletteId = settings['color_palette'] as String? ?? 'default';
         _backgroundMode = settings['background_mode'] as String? ?? 'default';
+        _firstDayOfWeek = (settings['first_day_of_week'] as int?) ?? 1;
 
         notifyListeners();
       }
@@ -314,6 +324,12 @@ class SettingsProvider with ChangeNotifier {
     _backgroundMode = mode;
     notifyListeners();
     await _saveToDb({'background_mode': mode});
+  }
+
+  Future<void> updateFirstDayOfWeek(int day) async {
+    _firstDayOfWeek = day;
+    notifyListeners();
+    await _saveToDb({'first_day_of_week': day});
   }
 
   Future<void> updateProfile(double heightCm, double weightKg) async {
