@@ -26,6 +26,9 @@
 - **Stats Dashboard:** Overview cards for total workouts, volume, duration, and sets with session-level breakdown.
 - **Settings & Profile:** Configure theme, color palette, background mode, language, weight unit (kg/lbs), height, and body measurements.
 - **Multi-Language Support:** English, Turkish (Türkçe), and Spanish (Español) localization built-in.
+- **First Day of Week Setting:** Choose Monday, Saturday, or Sunday as your week start — workout plans sort accordingly.
+- **Add Exercise from Library:** Long-press or tap "Add to Workout" from any exercise detail to add it to a workout plan.
+- **Redesigned Exercise Detail Screen:** Hero GIF with SliverAppBar, card-based metrics, modern history cards.
 - **Backup & Restore:** Export/import your workout data for safe keeping.
 - **Cross-Platform:** Runs seamlessly on Android and Windows Desktop.
 
@@ -40,6 +43,9 @@
   <img src="assets/screenshots/4.jpeg" width="30%" />
   <img src="assets/screenshots/5.jpeg" width="30%" />
   <img src="assets/screenshots/6.jpeg" width="30%" />
+</p>
+<p align="center">
+  <img src="assets/screenshots/7.jpeg" width="30%" />
 </p>
 
 ## 🚀 Download & Install
@@ -118,7 +124,17 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v2.1)
+## 📋 What's New (v2.2.0)
+
+- **Redesigned Exercise Detail Screen** — Hero GIF with SliverAppBar, card-based metrics, modern history cards with LIVE badge
+- **First Day of Week Setting** — Choose Monday, Saturday, or Sunday; workout plans sort accordingly
+- **Add Exercise from Library** — Tap "Add to Workout" from exercise detail to add it to any workout plan
+- **Exercise Counter Repositioned** — Swipe indicator (1/8) moved to bottom-left for better visibility
+- **Workout Plan Sorting** — Next training cards respect first day of week setting
+- **Alternative Exercise Swap** — Quick swap button in exercise detail AppBar
+
+<details>
+<summary>v2.1.0 Changes</summary>
 
 - **Light / Dark / Pure Black themes** with full theme-aware colors across all screens
 - **6 Color Palettes:** Default, Ocean, Sunset, Forest, Rose, Crimson
@@ -138,6 +154,8 @@ flutter build windows
 - Exercise thumbnails in workout lists
 - Improved ExRx exercise matching
 - Windows desktop support improvements
+
+</details>
 
 ---
 *Built with ❤️ for fitness enthusiasts.*
