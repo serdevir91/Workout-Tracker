@@ -94,11 +94,11 @@ class _SwipeableExerciseScreenState extends State<SwipeableExerciseScreen> {
           },
         ),
 
-        // Swipe hint overlay — positioned at bottom-left of hero area, above the exercise name
+        // Swipe hint overlay — right below the "0/3 sets" badge
         if (widget.exercises.length > 1)
           Positioned(
-            bottom: 52,
-            left: 16,
+            top: kToolbarHeight + MediaQuery.of(context).padding.top + 42,
+            right: 16,
             child: _SwipeHint(
               currentIndex: _currentIndex,
               totalCount: widget.exercises.length,
