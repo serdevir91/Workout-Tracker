@@ -128,7 +128,8 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   final Map<int, String> _draftReps = {};
   final Map<String, Map<String, dynamic>> _lastExerciseStats = {};
 
-  // Track which exercise the user is currently viewing (for notification)
+  // Track which exercise the user is currently viewing.
+  // This controls both notification display AND which exercise receives timer seconds.
   int _currentViewingExerciseIndex = -1;
   int get currentViewingExerciseIndex => _currentViewingExerciseIndex;
 
@@ -182,14 +183,18 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       // 3. Compensate exercise & cardio timers for missed background time
+      // Use currently viewed exercise (same logic as timer tick)
       final missedSeconds = now.difference(_lastTickTime).inSeconds;
       if (missedSeconds > 1) {
         if (_activeExercises.isNotEmpty) {
-          final lastEx = _activeExercises.last;
-          if (lastEx.exercise.endTime == null && lastEx.exercise.id != null
-              && !_activeCardioTimerIds.contains(lastEx.exercise.id!)) {
-            _exerciseElapsedSeconds[lastEx.exercise.id!] =
-                (_exerciseElapsedSeconds[lastEx.exercise.id!] ?? 0) + missedSeconds;
+          final activeIdx = (_currentViewingExerciseIndex >= 0 && _currentViewingExerciseIndex < _activeExercises.length)
+              ? _currentViewingExerciseIndex
+              : _activeExercises.length - 1;
+          final activeEx = _activeExercises[activeIdx];
+          if (activeEx.exercise.endTime == null && activeEx.exercise.id != null
+              && !_activeCardioTimerIds.contains(activeEx.exercise.id!)) {
+            _exerciseElapsedSeconds[activeEx.exercise.id!] =
+                (_exerciseElapsedSeconds[activeEx.exercise.id!] ?? 0) + missedSeconds;
           }
         }
         for (final exId in _activeCardioTimerIds) {
@@ -305,6 +310,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     _workoutElapsedSeconds = 0;
     _exerciseElapsedSeconds = {};
     _isTimerRunning = false;
+    _currentViewingExerciseIndex = -1;
     _workoutStartedAt = DateTime.now();
     _totalPausedSeconds = 0;
     _manualPauseStartedAt = null;
@@ -314,12 +320,11 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> finishWorkout() async {
     if (_activeWorkout == null) return;
 
-    // Finish any active exercise
-    if (_activeExercises.isNotEmpty) {
-      final lastEx = _activeExercises.last;
-      if (lastEx.exercise.endTime == null) {
-        final duration = _exerciseElapsedSeconds[lastEx.exercise.id] ?? 0;
-        await _db.finishExercise(lastEx.exercise.id!, duration);
+    // Finish ALL exercises that are still open (not just the last one)
+    for (final ex in _activeExercises) {
+      if (ex.exercise.endTime == null && ex.exercise.id != null) {
+        final duration = _exerciseElapsedSeconds[ex.exercise.id] ?? 0;
+        await _db.finishExercise(ex.exercise.id!, duration);
       }
     }
 
@@ -356,12 +361,11 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _finishCurrentWorkoutSilently() async {
     if (_activeWorkout == null) return;
 
-    // Finish any active exercise
-    if (_activeExercises.isNotEmpty) {
-      final lastEx = _activeExercises.last;
-      if (lastEx.exercise.endTime == null) {
-        final duration = _exerciseElapsedSeconds[lastEx.exercise.id] ?? 0;
-        await _db.finishExercise(lastEx.exercise.id!, duration);
+    // Finish ALL exercises that are still open
+    for (final ex in _activeExercises) {
+      if (ex.exercise.endTime == null && ex.exercise.id != null) {
+        final duration = _exerciseElapsedSeconds[ex.exercise.id] ?? 0;
+        await _db.finishExercise(ex.exercise.id!, duration);
       }
     }
 
@@ -422,6 +426,8 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     _exerciseElapsedSeconds[exerciseId] = 0;
     _activeExercises.add(newExercise);
+    // Automatically switch timer focus to the newly added exercise
+    _currentViewingExerciseIndex = _activeExercises.length - 1;
     notifyListeners();
   }
 
@@ -596,6 +602,9 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
       _activeExercises.add(activeEx);
     }
 
+    // Start tracking from the first exercise so timer ticks go to it
+    _currentViewingExerciseIndex = _activeExercises.isNotEmpty ? 0 : -1;
+
     _isTimerRunning = false;
     notifyListeners();
   }
@@ -635,13 +644,17 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       // Delta-based for exercise timers (auto-compensates background gaps)
-      // Skip exercises that have active cardio timers — they use their own path below
+      // Accumulate time on the currently viewed exercise (or last if none selected).
+      // Skip exercises that have active cardio timers — they use their own path below.
       if (_activeExercises.isNotEmpty) {
-        final lastEx = _activeExercises.last;
-        if (lastEx.exercise.endTime == null && lastEx.exercise.id != null
-            && !_activeCardioTimerIds.contains(lastEx.exercise.id!)) {
-          _exerciseElapsedSeconds[lastEx.exercise.id!] =
-              (_exerciseElapsedSeconds[lastEx.exercise.id!] ?? 0) + delta;
+        final activeIdx = (_currentViewingExerciseIndex >= 0 && _currentViewingExerciseIndex < _activeExercises.length)
+            ? _currentViewingExerciseIndex
+            : _activeExercises.length - 1;
+        final activeEx = _activeExercises[activeIdx];
+        if (activeEx.exercise.endTime == null && activeEx.exercise.id != null
+            && !_activeCardioTimerIds.contains(activeEx.exercise.id!)) {
+          _exerciseElapsedSeconds[activeEx.exercise.id!] =
+              (_exerciseElapsedSeconds[activeEx.exercise.id!] ?? 0) + delta;
         }
       }
 

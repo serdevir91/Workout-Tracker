@@ -1,7 +1,7 @@
 # Workout Tracker — Proje Rehberi (Agent Reference)
 
 > Bu dosya AI agent'ların projeyi hızlıca anlaması için oluşturulmuştur.
-> Son güncelleme: 2 Mart 2026
+> Son güncelleme: 4 Mart 2026
 
 ---
 
@@ -235,6 +235,10 @@ Cardio UI: Büyük timer gösterimi + Start/Stop butonu + "Save (X min)" butonu.
 9. **Foreground service** yok — agresif OEM'lerde (Xiaomi, Samsung) arka plan timer durabilir
 10. ~~Cardio geçmişi exercise_info & summary ekranlarında hâlâ "X kg x Y reps" formatında~~ → Düzeltildi
 11. ~~**ExRx.net lisanslama sorunu**~~ → free-exercise-db (Unlicense) ile değiştirildi
+12. ~~**Exercise timer** sadece son egzersize yazıyordu~~ → v3.0.1'de aktif görüntülenen egzersize yazılıyor
+13. ~~**finishWorkout** sadece son egzersizi kapatıyordu~~ → v3.0.1'de tüm açık egzersizler kapatılıyor
+14. ~~**Kas grubu kategorileri** çok genel (Arms, Legs)~~ → v3.0.1'de Biceps/Triceps, Quadriceps/Hamstrings, Lower Back ayrıldı
+15. ~~**Muscle group matching** custom egzersiz isimlerinde başarısız~~ → v3.0.1'de 60+ override + fuzzy matching + cache
 
 ---
 

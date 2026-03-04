@@ -1,12 +1,23 @@
 # Workout Tracker — Görev Listesi
 
-> Son güncelleme: 2 Mart 2026
+> Son güncelleme: 4 Mart 2026
 
 ---
 
 ## Görevler
 
-### 10. 🚀 free-exercise-db Entegrasyonu (v3.0.0) ✅
+### 12. 📦 GitHub Release v3.0.1 ✅
+- [x] Kas grubu kategorileri iyileştirildi (Arms→Biceps+Triceps, Legs→Quadriceps+Hamstrings, vb.)
+- [x] Exercise timer fix: aktif görüntülenen egzersize süre yazılıyor
+- [x] finishWorkout tüm açık egzersizleri kapatıyor
+- [x] 60+ custom exercise name override + fuzzy matching + cache eklendi
+- [x] Donut chart ortalandı, legend wrap center
+- [x] v3.0.1+7 versiyon güncellendi
+- [x] README.md güncellendi (v3.0.1 changelog)
+- [x] Git commit & tag & push
+- [x] GitHub release oluştur (v3.0.1 tag, APK yükle)
+
+### 11. 📦 GitHub Release v3.0.0 ✅
 - [x] ExRx.net yerine free-exercise-db (Unlicense, 873 egzersiz) entegrasyonu
 - [x] `lib/utils/exercise_db.dart` oluşturuldu (ExrxUrlMatcher yerine)
 - [x] `assets/data/free_exercises.json` eklendi (873 egzersiz verisi)
@@ -76,7 +87,7 @@
 
 ---
 
-## Tamamlanma Durumu: 11/11 ✅
+## Tamamlanma Durumu: 12/12 ✅
 
 `flutter analyze` sonucu: **No issues found!`
 

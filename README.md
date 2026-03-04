@@ -124,7 +124,17 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v3.0.0)
+## 📋 What's New (v3.0.1)
+
+- **Refined Muscle Group Categories** — Split broad groups into specific targets: Arms → Biceps + Triceps, Legs → Quadriceps + Hamstrings, Glutes & Hips → Glutes, added Lower Back as separate category, Traps moved to Shoulders
+- **Exercise Timer Fix** — Timer now correctly tracks the currently viewed exercise instead of always the last one; background time compensation also uses the active exercise
+- **All Exercises Properly Finished** — Workout completion now finishes all open exercises (not just the last one), fixing duration tracking for multi-exercise workouts
+- **Smart Muscle Group Matching** — Added 60+ custom exercise name overrides, fuzzy keyword matching with caching, and special bench press detection (close-grip → Triceps, others → Chest)
+- **Improved Donut Chart** — Muscle group distribution chart is now properly centered with centered legend layout
+- **Exercise Library Updates** — Category list updated to match new fine-grained muscle groups with distinct colors and icons
+
+<details>
+<summary>v3.0.0 Changes</summary>
 
 - **Free Exercise Database** — Replaced ExRx.net with [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (873 exercises, public domain / Unlicense)
 - **Auto-Cycling Exercise Images** — Exercise detail screen images now auto-cycle between start/end positions like a GIF animation (1.2s interval)
@@ -132,6 +142,8 @@ flutter build windows
 - **Exercise Add Bug Fixed** — Adding exercises to workouts from the library now works correctly in all views
 - **Removed url_launcher Dependency** — Streamlined dependencies, no more external browser launches for exercises
 - **Cleaned Up Codebase** — Removed 24+ legacy Python scraping scripts and outdated data files
+
+</details>
 
 <details>
 <summary>v2.2.1 Changes</summary>

@@ -104,7 +104,11 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final row in exerciseSets) {
       final name = (row['name'] as String).toLowerCase();
       final sets = (row['total_sets'] as num).toDouble();
-      final group = muscleMap[name] ?? 'Other';
+      // Try exact match first, then fuzzy match for custom exercise names
+      String group = muscleMap[name] ?? '';
+      if (group.isEmpty) {
+        group = await ExerciseDB.findMuscleGroup(name);
+      }
       grouped[group] = (grouped[group] ?? 0) + sets;
     }
     if (mounted) setState(() => _muscleGroupData = grouped);
@@ -614,14 +618,17 @@ class _HomeScreenState extends State<HomeScreen> {
   // ═══════════════════════════════════════════════════════════
 
   static const Map<String, Color> _muscleColors = {
-    'Chest': Color(0xFF7ED321),
+    'Chest': Color(0xFFFF6B6B),
     'Back': Color(0xFF4ECDC4),
+    'Lower Back': Color(0xFF26A69A),
     'Shoulders': Color(0xFFFFBE0B),
-    'Arms': Color(0xFFFF006E),
+    'Biceps': Color(0xFFFF006E),
+    'Triceps': Color(0xFFD63384),
     'Forearms': Color(0xFFFF8500),
     'Core': Color(0xFF8338EC),
-    'Legs': Color(0xFF00D4AA),
-    'Glutes & Hips': Color(0xFFFB5607),
+    'Quadriceps': Color(0xFF00D4AA),
+    'Hamstrings': Color(0xFF0EA5E9),
+    'Glutes': Color(0xFFFB5607),
     'Calves': Color(0xFF3A86FF),
     'Neck': Color(0xFFADB5BD),
     'Cardio': Color(0xFF6B6B8D),
@@ -922,34 +929,37 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(200, 200),
-                  painter: _DonutPainter(segments: segments),
-                ),
-                // Center text
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      total.toStringAsFixed(0),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+          Center(
+            child: SizedBox(
+              width: 240,
+              height: 240,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size(200, 200),
+                    painter: _DonutPainter(segments: segments),
+                  ),
+                  // Center text
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        total.toStringAsFixed(0),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      Translations.of(context).get('sets_label'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
+                      Text(
+                        Translations.of(context).get('sets_label'),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -957,6 +967,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Wrap(
             spacing: 16,
             runSpacing: 8,
+            alignment: WrapAlignment.center,
             children: segments.map((s) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
