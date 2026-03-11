@@ -10,7 +10,7 @@
   </p>
 </div>
 
-## âœ¨ Features
+## Features
 
 - **Light / Dark / Pure Black Themes:** Full theme support with 6 color palettes (Default, Ocean, Sunset, Forest, Rose, Crimson) and AMOLED-friendly pure black mode.
 - **Exercise Library:** 873 exercises categorized by muscle groups with auto-cycling image demonstrations (public domain, [free-exercise-db](https://github.com/yuhonas/free-exercise-db)).
@@ -32,7 +32,7 @@
 - **Backup & Restore:** Export/import your workout data for safe keeping.
 - **Cross-Platform:** Runs seamlessly on Android and Windows Desktop.
 
-## ðŸ“± Screenshots
+## Screenshots
 
 <p align="center">
   <img src="assets/screenshots/1.jpeg" width="30%" />
@@ -50,7 +50,7 @@
   <img src="assets/screenshots/9.jpeg" width="30%" />
 </p>
 
-## ðŸš€ Download & Install
+## Download & Install
 
 You can easily install and test the app on your Android device!
 
@@ -67,7 +67,7 @@ Download and run the Windows build from the [Releases](https://github.com/serdev
 flutter build windows
 ```
 
-## ðŸ’» Tech Stack
+## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -77,7 +77,7 @@ flutter build windows
 | **UI Components** | TableCalendar, Custom IndexedStack Navigation |
 | **Localization** | Custom translation system (EN / TR / ES) |
 
-## ðŸ“ Project Structure
+## Project Structure
 
 ```
 lib/
@@ -104,7 +104,7 @@ lib/
 â””â”€â”€ widgets/                   # Reusable widgets
 ```
 
-## ðŸ› ï¸ Run Locally
+## Run Locally
 
 ```bash
 # Clone the repository
@@ -126,7 +126,7 @@ flutter build apk --release
 flutter build windows
 ```
 
-## ðŸ“‹ What's New (v3.1.5)
+## What's New (v3.1.5)
 
 - **Cardio Issue Fixed** â€” Cardio exercises now handle timer/session flow more reliably during active workouts.
 - **Session Completion Reliability** â€” Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
@@ -221,4 +221,3 @@ flutter build windows
 </details>
 
 ---
-*Built with â¤ï¸ for fitness enthusiasts.*
