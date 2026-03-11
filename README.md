@@ -46,6 +46,8 @@
 </p>
 <p align="center">
   <img src="assets/screenshots/7.jpeg" width="30%" />
+  <img src="assets/screenshots/8.jpeg" width="30%" />
+  <img src="assets/screenshots/9.jpeg" width="30%" />
 </p>
 
 ## 🚀 Download & Install
@@ -126,7 +128,7 @@ flutter build windows
 
 ## 📋 What's New (v3.1.5)
 
-- **Cardio Issue Fixed (Düzelt Workout Tracker cardio sorun)** — Cardio exercises now handle timer/session flow more reliably during active workouts.
+- **Cardio Issue Fixed** — Cardio exercises now handle timer/session flow more reliably during active workouts.
 - **Session Completion Reliability** — Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
 - **Stats & Summary Consistency** — Stats and workout summary calculations were aligned with the updated workout/session flow.
 
