@@ -208,7 +208,7 @@ flutter build windows
 </details>
 
 <details>
-<summary>v1.0.0 â€” Initial Release</summary>
+<summary>v1.0.0 Initial Release</summary>
 
 - Core workout tracking with sets, reps, and weight logging
 - Exercise library with 526+ exercises and GIF demonstrations
