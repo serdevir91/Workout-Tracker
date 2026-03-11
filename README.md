@@ -81,27 +81,27 @@ flutter build windows
 
 ```
 lib/
-â”œâ”€â”€ main.dart                  # App entry point
-â”œâ”€â”€ db/                        # Database helper (SQLite)
-â”œâ”€â”€ l10n/                      # Translations (EN, TR)
-â”œâ”€â”€ models/                    # Data models (Workout, Plan, etc.)
-â”œâ”€â”€ providers/                 # State management (Workout, Settings)
-â”œâ”€â”€ screens/                   # All app screens
-â”‚   â”œâ”€â”€ home_screen.dart
-â”‚   â”œâ”€â”€ active_workout_screen.dart
-â”‚   â”œâ”€â”€ exercise_library_screen.dart
-â”‚   â”œâ”€â”€ exercise_info_screen.dart
-â”‚   â”œâ”€â”€ plans_screen.dart
-â”‚   â”œâ”€â”€ create_routine_screen.dart
-â”‚   â”œâ”€â”€ stats_screen.dart
-â”‚   â”œâ”€â”€ settings_screen.dart
-â”‚   â”œâ”€â”€ workout_detail_screen.dart
-â”‚   â”œâ”€â”€ workout_schedule_screen.dart
-â”‚   â”œâ”€â”€ workout_summary_screen.dart
-â”‚   â””â”€â”€ swipeable_exercise_screen.dart
-â”œâ”€â”€ services/                  # Notification service
-â”œâ”€â”€ utils/                     # Utility functions
-â””â”€â”€ widgets/                   # Reusable widgets
+|-- main.dart                  # App entry point
+|-- db/                        # Database helper (SQLite)
+|-- l10n/                      # Translations (EN, TR)
+|-- models/                    # Data models (Workout, Plan, etc.)
+|-- providers/                 # State management (Workout, Settings)
+|-- screens/                   # All app screens
+|   |-- home_screen.dart
+|   |-- active_workout_screen.dart
+|   |-- exercise_library_screen.dart
+|   |-- exercise_info_screen.dart
+|   |-- plans_screen.dart
+|   |-- create_routine_screen.dart
+|   |-- stats_screen.dart
+|   |-- settings_screen.dart
+|   |-- workout_detail_screen.dart
+|   |-- workout_schedule_screen.dart
+|   |-- workout_summary_screen.dart
+|   `-- swipeable_exercise_screen.dart
+|-- services/                  # Notification service
+|-- utils/                     # Utility functions
+`-- widgets/                   # Reusable widgets
 ```
 
 ## Run Locally
