@@ -36,7 +36,7 @@
 
 <p align="center">
   <img src="assets/screenshots/1.jpeg" width="30%" />
-  <img src="assets/screenshots/2.jpeg?v=20260311-1940" width="30%" />
+  <img src="assets/screenshots/2_v2.jpeg" width="30%" />
   <img src="assets/screenshots/3.jpeg" width="30%" />
 </p>
 <p align="center">
