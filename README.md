@@ -124,7 +124,14 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v3.0.1)
+## 📋 What's New (v3.1.5)
+
+- **Cardio Issue Fixed (Düzelt Workout Tracker cardio sorun)** — Cardio exercises now handle timer/session flow more reliably during active workouts.
+- **Session Completion Reliability** — Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
+- **Stats & Summary Consistency** — Stats and workout summary calculations were aligned with the updated workout/session flow.
+
+<details>
+<summary>v3.0.1 Changes</summary>
 
 - **Refined Muscle Group Categories** — Split broad groups into specific targets: Arms → Biceps + Triceps, Legs → Quadriceps + Hamstrings, Glutes & Hips → Glutes, added Lower Back as separate category, Traps moved to Shoulders
 - **Exercise Timer Fix** — Timer now correctly tracks the currently viewed exercise instead of always the last one; background time compensation also uses the active exercise
@@ -132,6 +139,8 @@ flutter build windows
 - **Smart Muscle Group Matching** — Added 60+ custom exercise name overrides, fuzzy keyword matching with caching, and special bench press detection (close-grip → Triceps, others → Chest)
 - **Improved Donut Chart** — Muscle group distribution chart is now properly centered with centered legend layout
 - **Exercise Library Updates** — Category list updated to match new fine-grained muscle groups with distinct colors and icons
+
+</details>
 
 <details>
 <summary>v3.0.0 Changes</summary>

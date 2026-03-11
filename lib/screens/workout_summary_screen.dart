@@ -10,6 +10,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
   final int setsCompleted;
   final double volume;
   final int calories;
+  final double completionPercentage;
 
   const WorkoutSummaryScreen({
     super.key,
@@ -18,6 +19,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
     required this.setsCompleted,
     required this.volume,
     required this.calories,
+    required this.completionPercentage,
   });
 
   @override
@@ -50,6 +52,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
               _buildStatRow(context, t.get('total_duration'), formatDuration(duration), Icons.timer),
               _buildStatRow(context, t.get('total_volume'), settings.formatWeight(volume), Icons.fitness_center),
               _buildStatRow(context, t.get('total_sets'), '$setsCompleted', Icons.check_circle),
+              _buildStatRow(context, 'Completion', '${completionPercentage.round()}%', Icons.show_chart),
               _buildStatRow(context, 'Calories', '$calories kcal', Icons.local_fire_department),
               const Spacer(),
               ElevatedButton(

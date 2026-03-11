@@ -15,7 +15,8 @@ class DatabaseHelper {
 
   /// Initialize the database factory for the current platform
   static void initDatabaseFactory() {
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    if (!kIsWeb &&
+        (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }
@@ -23,13 +24,13 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    
+
     // Eğer hali hazırda bir kurulum devam ediyorsa onu bekle
     if (_initDbFuture != null) {
       _database = await _initDbFuture;
       return _database!;
     }
-    
+
     _initDbFuture = _initDatabase();
     _database = await _initDbFuture;
     _initDbFuture = null;
@@ -188,16 +189,24 @@ class DatabaseHelper {
     // Note: User requested not to seed default templates. Just keep schema empty.
 
     // Performance indexes
-    await db.execute('CREATE INDEX idx_exercises_workout_id ON exercises(workout_id)');
-    await db.execute('CREATE INDEX idx_exercise_sets_exercise_id ON exercise_sets(exercise_id)');
+    await db.execute(
+      'CREATE INDEX idx_exercises_workout_id ON exercises(workout_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_exercise_sets_exercise_id ON exercise_sets(exercise_id)',
+    );
     await db.execute('CREATE INDEX idx_exercises_name ON exercises(name)');
-    await db.execute('CREATE INDEX idx_workouts_start_time ON workouts(start_time)');
+    await db.execute(
+      'CREATE INDEX idx_workouts_start_time ON workouts(start_time)',
+    );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Add calories column to existing workouts
-      await db.execute('ALTER TABLE workouts ADD COLUMN calories REAL DEFAULT 0');
+      await db.execute(
+        'ALTER TABLE workouts ADD COLUMN calories REAL DEFAULT 0',
+      );
 
       // Create Settings
       await db.execute('''
@@ -251,28 +260,45 @@ class DatabaseHelper {
       // Seed default plans
       await _seedDefaultTemplates(db);
     }
-    
+
     if (oldVersion < 3) {
       // The user requested to delete the default templates natively assigned
-      await db.delete('workout_templates', where: "name IN ('Push Day', 'Pull Day', 'Leg Day')");
+      await db.delete(
+        'workout_templates',
+        where: "name IN ('Push Day', 'Pull Day', 'Leg Day')",
+      );
     }
 
     if (oldVersion < 4) {
-      await db.execute('ALTER TABLE user_settings ADD COLUMN show_on_dashboard INTEGER DEFAULT 1');
-      await db.execute('ALTER TABLE user_settings ADD COLUMN display_all_data INTEGER DEFAULT 1');
-      await db.execute('ALTER TABLE user_settings ADD COLUMN auto_positioning INTEGER DEFAULT 0');
-      await db.execute("ALTER TABLE user_settings ADD COLUMN workout_days TEXT DEFAULT '1,2,3,4,5,6,7'");
+      await db.execute(
+        'ALTER TABLE user_settings ADD COLUMN show_on_dashboard INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE user_settings ADD COLUMN display_all_data INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE user_settings ADD COLUMN auto_positioning INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        "ALTER TABLE user_settings ADD COLUMN workout_days TEXT DEFAULT '1,2,3,4,5,6,7'",
+      );
     }
     if (oldVersion < 5) {
-      await db.execute('ALTER TABLE workouts ADD COLUMN completion_percentage REAL DEFAULT 100.0');
+      await db.execute(
+        'ALTER TABLE workouts ADD COLUMN completion_percentage REAL DEFAULT 100.0',
+      );
     }
     if (oldVersion < 6) {
-      await db.execute('ALTER TABLE template_exercises ADD COLUMN rest_seconds INTEGER DEFAULT 60');
+      await db.execute(
+        'ALTER TABLE template_exercises ADD COLUMN rest_seconds INTEGER DEFAULT 60',
+      );
     }
     if (oldVersion < 8) {
       // Fix for databases created that missed the completion_percentage column
       try {
-        await db.execute('ALTER TABLE workouts ADD COLUMN completion_percentage REAL DEFAULT 100.0');
+        await db.execute(
+          'ALTER TABLE workouts ADD COLUMN completion_percentage REAL DEFAULT 100.0',
+        );
       } catch (_) {
         // Ignored. Column likely already exists.
       }
@@ -280,24 +306,72 @@ class DatabaseHelper {
 
     if (oldVersion < 9) {
       // Performance indexes
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_exercises_workout_id ON exercises(workout_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_exercise_sets_exercise_id ON exercise_sets(exercise_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_exercises_name ON exercises(name)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_exercises_workout_id ON exercises(workout_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_exercise_sets_exercise_id ON exercise_sets(exercise_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_exercises_name ON exercises(name)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time)',
+      );
     }
 
     if (oldVersion < 10) {
       // Add measurement_system and body measurement columns to user_settings
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN measurement_system TEXT DEFAULT \'metric\''); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN arm_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN waist_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN shoulder_width REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN chest_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN hip_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN thigh_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN calf_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN neck_circumference REAL'); } catch (_) {}
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN forearm_circumference REAL'); } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN measurement_system TEXT DEFAULT \'metric\'',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN arm_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN waist_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN shoulder_width REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN chest_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN hip_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN thigh_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN calf_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN neck_circumference REAL',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN forearm_circumference REAL',
+        );
+      } catch (_) {}
 
       // Create body measurement history table
       await db.execute('''
@@ -320,13 +394,25 @@ class DatabaseHelper {
     }
     if (oldVersion < 11) {
       // Add color_palette column to user_settings
-      try { await db.execute("ALTER TABLE user_settings ADD COLUMN color_palette TEXT DEFAULT 'default'"); } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE user_settings ADD COLUMN color_palette TEXT DEFAULT 'default'",
+        );
+      } catch (_) {}
     }
     if (oldVersion < 12) {
-      try { await db.execute("ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'default'"); } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'default'",
+        );
+      } catch (_) {}
     }
     if (oldVersion < 13) {
-      try { await db.execute('ALTER TABLE user_settings ADD COLUMN first_day_of_week INTEGER DEFAULT 1'); } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE user_settings ADD COLUMN first_day_of_week INTEGER DEFAULT 1',
+        );
+      } catch (_) {}
     }
   }
 
@@ -384,7 +470,12 @@ class DatabaseHelper {
     });
   }
 
-  Future<void> finishWorkout(int id, int totalDuration, double calories, double completionPercentage) async {
+  Future<void> finishWorkout(
+    int id,
+    int totalDuration,
+    double calories,
+    double completionPercentage,
+  ) async {
     final db = await database;
     await db.update(
       'workouts',
@@ -435,14 +526,21 @@ class DatabaseHelper {
     });
   }
 
+  Future<void> updateExerciseName(int exerciseId, String name) async {
+    final db = await database;
+    await db.update(
+      'exercises',
+      {'name': name},
+      where: 'id = ?',
+      whereArgs: [exerciseId],
+    );
+  }
+
   Future<void> finishExercise(int id, int duration) async {
     final db = await database;
     await db.update(
       'exercises',
-      {
-        'end_time': DateTime.now().toIso8601String(),
-        'duration': duration,
-      },
+      {'end_time': DateTime.now().toIso8601String(), 'duration': duration},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -451,10 +549,10 @@ class DatabaseHelper {
   Future<Workout?> getUnfinishedWorkout() async {
     final db = await database;
     final maps = await db.query(
-      'workouts', 
-      where: 'end_time IS NULL', 
-      orderBy: 'start_time DESC', 
-      limit: 1
+      'workouts',
+      where: 'end_time IS NULL',
+      orderBy: 'start_time DESC',
+      limit: 1,
     );
     if (maps.isNotEmpty) {
       return Workout.fromMap(maps.first);
@@ -475,7 +573,12 @@ class DatabaseHelper {
     return maps.map((m) => ExerciseSet.fromMap(m)).toList();
   }
 
-  Future<int> createSet(int exerciseId, int setNumber, double weight, int reps) async {
+  Future<int> createSet(
+    int exerciseId,
+    int setNumber,
+    double weight,
+    int reps,
+  ) async {
     final db = await database;
     return db.insert('exercise_sets', {
       'exercise_id': exerciseId,
@@ -488,10 +591,12 @@ class DatabaseHelper {
 
   Future<void> updateSet(int setId, double weight, int reps) async {
     final db = await database;
-    await db.update('exercise_sets', {
-      'weight': weight,
-      'reps': reps,
-    }, where: 'id = ?', whereArgs: [setId]);
+    await db.update(
+      'exercise_sets',
+      {'weight': weight, 'reps': reps},
+      where: 'id = ?',
+      whereArgs: [setId],
+    );
   }
 
   Future<int> deleteSet(int setId) async {
@@ -501,14 +606,19 @@ class DatabaseHelper {
 
   Future<int> deleteExercise(int exerciseId) async {
     final db = await database;
-    await db.delete('exercise_sets', where: 'exercise_id = ?', whereArgs: [exerciseId]);
+    await db.delete(
+      'exercise_sets',
+      where: 'exercise_id = ?',
+      whereArgs: [exerciseId],
+    );
     return db.delete('exercises', where: 'id = ?', whereArgs: [exerciseId]);
   }
 
   /// Get exercises with their sets in a single JOIN query (N+1 fix for workout detail).
   Future<List<Map<String, dynamic>>> getExercisesWithSets(int workoutId) async {
     final db = await database;
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT 
         e.id as exercise_id, e.workout_id, e.name, e.start_time, e.end_time, 
         e.duration, e.exercise_order,
@@ -517,7 +627,9 @@ class DatabaseHelper {
       LEFT JOIN exercise_sets s ON e.id = s.exercise_id
       WHERE e.workout_id = ?
       ORDER BY e.exercise_order ASC, s.set_number ASC
-    ''', [workoutId]);
+    ''',
+      [workoutId],
+    );
 
     final Map<int, Map<String, dynamic>> grouped = {};
     for (final row in result) {
@@ -529,7 +641,9 @@ class DatabaseHelper {
             workoutId: row['workout_id'] as int,
             name: row['name'] as String,
             startTime: DateTime.parse(row['start_time'] as String),
-            endTime: row['end_time'] != null ? DateTime.parse(row['end_time'] as String) : null,
+            endTime: row['end_time'] != null
+                ? DateTime.parse(row['end_time'] as String)
+                : null,
             duration: row['duration'] as int? ?? 0,
             exerciseOrder: row['exercise_order'] as int,
           ),
@@ -537,14 +651,16 @@ class DatabaseHelper {
         };
       }
       if (row['set_id'] != null) {
-        (grouped[exId]!['sets'] as List<ExerciseSet>).add(ExerciseSet(
-          id: row['set_id'] as int,
-          exerciseId: exId,
-          setNumber: row['set_number'] as int,
-          weight: (row['weight'] as num).toDouble(),
-          reps: row['reps'] as int,
-          completed: (row['completed'] as int? ?? 0) == 1,
-        ));
+        (grouped[exId]!['sets'] as List<ExerciseSet>).add(
+          ExerciseSet(
+            id: row['set_id'] as int,
+            exerciseId: exId,
+            setNumber: row['set_number'] as int,
+            weight: (row['weight'] as num).toDouble(),
+            reps: row['reps'] as int,
+            completed: (row['completed'] as int? ?? 0) == 1,
+          ),
+        );
       }
     }
     return grouped.values.toList();
@@ -573,7 +689,7 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getExerciseStats() async {
     final db = await database;
-    
+
     // Group by exercise name
     final result = await db.rawQuery('''
       SELECT 
@@ -590,19 +706,21 @@ class DatabaseHelper {
       GROUP BY e.name
       ORDER BY total_volume DESC, total_sets DESC
     ''');
-    
+
     return result;
   }
 
   Future<List<Map<String, dynamic>>> getWorkoutSessionStats() async {
     final db = await database;
-    
+
     final sessions = await db.rawQuery('''
       SELECT 
         w.id,
         w.name,
         w.start_time,
         w.total_duration,
+        COALESCE(w.calories, 0) as calories,
+        COALESCE(w.completion_percentage, 0) as completion_percentage,
         COUNT(DISTINCT e.id) as total_exercises,
         COUNT(s.id) as total_sets,
         COALESCE(SUM(s.reps), 0) as total_reps,
@@ -614,7 +732,7 @@ class DatabaseHelper {
       GROUP BY w.id
       ORDER BY w.start_time DESC
     ''');
-    
+
     final exercises = await db.rawQuery('''
       SELECT 
         e.workout_id,
@@ -623,21 +741,30 @@ class DatabaseHelper {
         COUNT(s.id) as sets,
         COALESCE(SUM(s.reps), 0) as reps,
         COALESCE(MAX(s.weight), 0) as max_weight,
-        COALESCE(AVG(s.weight), 0) as avg_weight
+        COALESCE(AVG(s.weight), 0) as avg_weight,
+        COALESCE(SUM(s.weight * s.reps), 0) as total_volume,
+        (
+          SELECT GROUP_CONCAT(CAST(s2.reps AS TEXT), '|')
+          FROM exercise_sets s2
+          WHERE s2.exercise_id = e.id AND s2.completed = 1
+          ORDER BY s2.set_number ASC
+        ) as set_reps_list
       FROM exercises e
       JOIN exercise_sets s ON e.id = s.exercise_id AND s.completed = 1
       GROUP BY e.id
       ORDER BY e.exercise_order ASC
     ''');
-    
+
     final List<Map<String, dynamic>> result = [];
     for (var session in sessions) {
       final sessMap = Map<String, dynamic>.from(session);
       final workoutId = session['id'];
-      sessMap['exercises'] = exercises.where((e) => e['workout_id'] == workoutId).toList();
+      sessMap['exercises'] = exercises
+          .where((e) => e['workout_id'] == workoutId)
+          .toList();
       result.add(sessMap);
     }
-    
+
     return result;
   }
 
@@ -645,10 +772,22 @@ class DatabaseHelper {
   Future<Map<String, List<double>>> getWeeklyAllStats() async {
     final db = await database;
     final now = DateTime.now();
-    final startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6)).toIso8601String();
-    final endDate = DateTime(now.year, now.month, now.day, 23, 59, 59).toIso8601String();
+    final startDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6)).toIso8601String();
+    final endDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      23,
+      59,
+      59,
+    ).toIso8601String();
 
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT 
         date(w.start_time) as workout_date,
         COALESCE(SUM(s.weight * s.reps), 0) as daily_volume,
@@ -659,7 +798,9 @@ class DatabaseHelper {
       JOIN workouts w ON e.workout_id = w.id
       WHERE w.start_time >= ? AND w.start_time <= ? AND s.completed = 1
       GROUP BY date(w.start_time)
-    ''', [startDate, endDate]);
+    ''',
+      [startDate, endDate],
+    );
 
     final volumes = List.filled(7, 0.0);
     final reps = List.filled(7, 0.0);
@@ -669,7 +810,9 @@ class DatabaseHelper {
     for (final row in result) {
       final dateStr = row['workout_date'] as String;
       final date = DateTime.parse(dateStr);
-      final daysAgo = todayStart.difference(DateTime(date.year, date.month, date.day)).inDays;
+      final daysAgo = todayStart
+          .difference(DateTime(date.year, date.month, date.day))
+          .inDays;
       final index = 6 - daysAgo;
       if (index >= 0 && index < 7) {
         volumes[index] = (row['daily_volume'] as num?)?.toDouble() ?? 0.0;
@@ -683,11 +826,13 @@ class DatabaseHelper {
 
   /// Get all exercise names with their set counts for a given time range.
   /// Used to build muscle group distribution charts.
-  Future<List<Map<String, dynamic>>> getExerciseSetCountsByPeriod(String? startDate) async {
+  Future<List<Map<String, dynamic>>> getExerciseSetCountsByPeriod(
+    String? startDate,
+  ) async {
     final db = await database;
     final where = startDate != null ? 'AND w.start_time >= ?' : '';
     final args = startDate != null ? [startDate] : <String>[];
-    
+
     final result = await db.rawQuery('''
       SELECT 
         e.name,
@@ -703,11 +848,13 @@ class DatabaseHelper {
   }
 
   /// Get calories per workout session for the chart.
-  Future<List<Map<String, dynamic>>> getCaloriesPerWorkout(String? startDate) async {
+  Future<List<Map<String, dynamic>>> getCaloriesPerWorkout(
+    String? startDate,
+  ) async {
     final db = await database;
     final where = startDate != null ? 'AND w.start_time >= ?' : '';
     final args = startDate != null ? [startDate] : <String>[];
-    
+
     final result = await db.rawQuery('''
       SELECT 
         w.id,
@@ -723,9 +870,12 @@ class DatabaseHelper {
     return result;
   }
 
-  Future<Map<String, dynamic>?> getLastExerciseRecord(String exerciseName) async {
+  Future<Map<String, dynamic>?> getLastExerciseRecord(
+    String exerciseName,
+  ) async {
     final db = await database;
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT 
         w.start_time,
         COUNT(s.id) as sets,
@@ -738,8 +888,10 @@ class DatabaseHelper {
       GROUP BY e.id
       ORDER BY w.start_time DESC
       LIMIT 1
-    ''', [exerciseName]);
-    
+    ''',
+      [exerciseName],
+    );
+
     if (result.isNotEmpty) {
       return result.first;
     }
@@ -747,10 +899,13 @@ class DatabaseHelper {
   }
 
   /// Get exercise history grouped by workout session (single JOIN query).
-  Future<List<Map<String, dynamic>>> getExerciseHistory(String exerciseName) async {
+  Future<List<Map<String, dynamic>>> getExerciseHistory(
+    String exerciseName,
+  ) async {
     final db = await database;
 
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT
         e.id as exercise_id,
         e.duration,
@@ -764,7 +919,9 @@ class DatabaseHelper {
       LEFT JOIN exercise_sets s ON e.id = s.exercise_id AND s.completed = 1
       WHERE LOWER(e.name) = LOWER(?) AND w.end_time IS NOT NULL
       ORDER BY w.start_time DESC, s.set_number ASC
-    ''', [exerciseName]);
+    ''',
+      [exerciseName],
+    );
 
     // Group by exercise_id (preserving insertion order = most recent first)
     final Map<int, Map<String, dynamic>> grouped = {};
@@ -813,16 +970,18 @@ class DatabaseHelper {
         exerciseMap[tId] = [];
       }
       if (row['ex_id'] != null) {
-        exerciseMap[tId]!.add(PlanExercise(
-          id: row['ex_id'] as int,
-          templateId: tId,
-          name: row['ex_name'] as String,
-          sets: (row['sets'] as num?)?.toInt() ?? 1,
-          reps: (row['reps'] as num?)?.toInt() ?? 0,
-          weight: (row['weight'] as num?)?.toDouble() ?? 0,
-          durationMinutes: row['duration_minutes'] as int?,
-          restSeconds: (row['rest_seconds'] as num?)?.toInt() ?? 60,
-        ));
+        exerciseMap[tId]!.add(
+          PlanExercise(
+            id: row['ex_id'] as int,
+            templateId: tId,
+            name: row['ex_name'] as String,
+            sets: (row['sets'] as num?)?.toInt() ?? 1,
+            reps: (row['reps'] as num?)?.toInt() ?? 0,
+            weight: (row['weight'] as num?)?.toDouble() ?? 0,
+            durationMinutes: row['duration_minutes'] as int?,
+            restSeconds: (row['rest_seconds'] as num?)?.toInt() ?? 60,
+          ),
+        );
       }
     }
 
@@ -846,7 +1005,7 @@ class DatabaseHelper {
       'day_number': plan.dayNumber,
       'target_muscles': plan.targetMuscles,
     });
-    
+
     for (int i = 0; i < plan.exercises.length; i++) {
       final ex = plan.exercises[i];
       await db.insert('template_exercises', {
@@ -865,14 +1024,23 @@ class DatabaseHelper {
   Future<void> updateWorkoutTemplate(WorkoutPlan plan) async {
     if (plan.id == null) return;
     final db = await database;
-    await db.update('workout_templates', {
-      'name': plan.name,
-      'day_number': plan.dayNumber,
-      'target_muscles': plan.targetMuscles,
-    }, where: 'id = ?', whereArgs: [plan.id]);
-    
-    await db.delete('template_exercises', where: 'template_id = ?', whereArgs: [plan.id]);
-    
+    await db.update(
+      'workout_templates',
+      {
+        'name': plan.name,
+        'day_number': plan.dayNumber,
+        'target_muscles': plan.targetMuscles,
+      },
+      where: 'id = ?',
+      whereArgs: [plan.id],
+    );
+
+    await db.delete(
+      'template_exercises',
+      where: 'template_id = ?',
+      whereArgs: [plan.id],
+    );
+
     for (int i = 0; i < plan.exercises.length; i++) {
       final ex = plan.exercises[i];
       await db.insert('template_exercises', {
@@ -889,7 +1057,11 @@ class DatabaseHelper {
 
   Future<void> deleteWorkoutTemplate(int id) async {
     final db = await database;
-    await db.delete('template_exercises', where: 'template_id = ?', whereArgs: [id]);
+    await db.delete(
+      'template_exercises',
+      where: 'template_id = ?',
+      whereArgs: [id],
+    );
     await db.delete('workout_templates', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -903,9 +1075,14 @@ class DatabaseHelper {
 
   Future<void> toggleOffDay(DateTime date) async {
     final db = await database;
-    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    
-    final existing = await db.query('off_days', where: 'date = ?', whereArgs: [dateStr]);
+    final dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    final existing = await db.query(
+      'off_days',
+      where: 'date = ?',
+      whereArgs: [dateStr],
+    );
     if (existing.isEmpty) {
       await db.insert('off_days', {'date': dateStr});
     } else {
@@ -922,26 +1099,50 @@ class DatabaseHelper {
   }
 
   /// Get body measurement history, ordered by date descending.
-  Future<List<Map<String, dynamic>>> getBodyMeasurements({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getBodyMeasurements({
+    int limit = 50,
+  }) async {
     final db = await database;
-    return db.query(
-      'body_measurements',
-      orderBy: 'date DESC',
-      limit: limit,
-    );
+    return db.query('body_measurements', orderBy: 'date DESC', limit: limit);
   }
 
   /// Get body measurement history for a specific field for charting.
   /// Returns [{date, value}] ordered by date ascending.
-  Future<List<Map<String, dynamic>>> getBodyMeasurementHistory(String field, {int limit = 30}) async {
+  Future<List<Map<String, dynamic>>> getBodyMeasurementHistory(
+    String field, {
+    int limit = 30,
+  }) async {
     final db = await database;
-    final result = await db.rawQuery('''
+    const allowedFields = <String>{
+      'weight',
+      'height',
+      'arm_circumference',
+      'waist_circumference',
+      'shoulder_width',
+      'chest_circumference',
+      'hip_circumference',
+      'thigh_circumference',
+      'calf_circumference',
+      'neck_circumference',
+      'forearm_circumference',
+    };
+    if (!allowedFields.contains(field)) {
+      throw ArgumentError.value(
+        field,
+        'field',
+        'Unsupported measurement field',
+      );
+    }
+    final result = await db.rawQuery(
+      '''
       SELECT date, $field as value
       FROM body_measurements
       WHERE $field IS NOT NULL AND $field > 0
       ORDER BY date ASC
       LIMIT ?
-    ''', [limit]);
+    ''',
+      [limit],
+    );
     return result;
   }
 }

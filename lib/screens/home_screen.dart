@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadDashboardCharts();
     });
   }
-  
+
   void _loadWeeklyData() async {
     try {
       final provider = context.read<WorkoutProvider>();
@@ -122,7 +122,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadBodyProgressData() async {
-    final data = await DatabaseHelper().getBodyMeasurementHistory(_selectedBodyStat, limit: 20);
+    final data = await DatabaseHelper().getBodyMeasurementHistory(
+      _selectedBodyStat,
+      limit: 20,
+    );
     if (mounted) setState(() => _bodyProgressData = data);
   }
 
@@ -154,18 +157,38 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          _wrapWithScaffold(Translations.of(context).get('home'), _buildHomeDashboard(context), actions: [
-            IconButton(
-              icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-            )
-          ]),
-          _wrapWithScaffold(Translations.of(context).get('workouts'), _buildWorkoutsTabContent(context, provider), actions: [
-            IconButton(
-              icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-            )
-          ]),
+          _wrapWithScaffold(
+            Translations.of(context).get('home'),
+            _buildHomeDashboard(context),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.settings,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+              ),
+            ],
+          ),
+          _wrapWithScaffold(
+            Translations.of(context).get('workouts'),
+            _buildWorkoutsTabContent(context, provider),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.settings,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+              ),
+            ],
+          ),
           const ExerciseLibraryScreen(),
           const StatsScreen(),
         ],
@@ -174,13 +197,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _wrapWithScaffold(String title, Widget content, {List<Widget>? actions}) {
+  Widget _wrapWithScaffold(
+    String title,
+    Widget content, {
+    List<Widget>? actions,
+  }) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        elevation: 0,
-        actions: actions,
-      ),
+      appBar: AppBar(title: Text(title), elevation: 0, actions: actions),
       body: content,
     );
   }
@@ -210,27 +233,27 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 32),
             Text(
               Translations.of(context).get('next_training'),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 12),
-              ..._buildNextTrainingCards(provider, settings),
-              
-              const SizedBox(height: 32),
-              _buildMuscleGroupChartSection(),
+            ),
+            const SizedBox(height: 12),
+            ..._buildNextTrainingCards(provider, settings),
 
-              const SizedBox(height: 32),
-              _buildBodyProgressSection(),
+            const SizedBox(height: 32),
+            _buildMuscleGroupChartSection(),
 
-              const SizedBox(height: 32),
-              _buildChartSection(),
+            const SizedBox(height: 32),
+            _buildBodyProgressSection(),
 
-              const SizedBox(height: 32),
-              _buildCaloriesChartSection(),
-              
+            const SizedBox(height: 32),
+            _buildChartSection(),
+
+            const SizedBox(height: 32),
+            _buildCaloriesChartSection(),
+
             const SizedBox(height: 100), // Scroll fixing space at bottom
           ],
         );
@@ -238,7 +261,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildActiveWorkoutBanner(BuildContext context, WorkoutProvider provider) {
+  Widget _buildActiveWorkoutBanner(
+    BuildContext context,
+    WorkoutProvider provider,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -251,51 +277,89 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4), width: 1.5),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.fitness_center, color: Theme.of(context).colorScheme.primary, size: 24),
+              child: Icon(
+                Icons.fitness_center,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(Translations.of(context).get('workout_in_progress'), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(
+                    Translations.of(context).get('workout_in_progress'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(provider.activeWorkout!.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600, fontSize: 16)),
+                  Text(
+                    provider.activeWorkout!.name,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.timer, size: 14, color: Theme.of(context).colorScheme.secondary),
+                      Icon(
+                        Icons.timer,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                       const SizedBox(width: 4),
                       ValueListenableBuilder<int>(
                         valueListenable: provider.elapsedSecondsNotifier,
                         builder: (_, elapsed, _) => Text(
                           formatDuration(elapsed),
-                          style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold, fontSize: 12),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.primary, size: 16),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Theme.of(context).colorScheme.primary,
+              size: 16,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWorkoutsTabContent(BuildContext context, WorkoutProvider provider) {
+  Widget _buildWorkoutsTabContent(
+    BuildContext context,
+    WorkoutProvider provider,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -307,32 +371,70 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           icon: const Icon(Icons.add, size: 20),
-          label: Text(Translations.of(context).get('add_workout'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          label: Text(
+            Translations.of(context).get('add_workout'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
         ),
         const SizedBox(height: 32),
-        Text(Translations.of(context).get('my_workout'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          Translations.of(context).get('my_workout'),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 12),
         if (provider.workoutPlans.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(Translations.of(context).get('no_routines_created'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            child: Text(
+              Translations.of(context).get('no_routines_created'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           )
         else
-          ..._getSortedPlans(provider).map((plan) => _buildRoutineCard(context, provider, plan)),
+          ..._getSortedPlans(
+            provider,
+          ).map((plan) => _buildRoutineCard(context, provider, plan)),
 
         const SizedBox(height: 32),
-        Text(Translations.of(context).get('all_past_workouts'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(
+          Translations.of(context).get('all_past_workouts'),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 12),
         if (provider.workouts.isEmpty)
-          Center(child: Padding(padding: const EdgeInsets.all(32), child: Text(Translations.of(context).get('no_workouts_found'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))))
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                Translations.of(context).get('no_workouts_found'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          )
         else
-          ...provider.workouts.map((workout) => _buildWorkoutHistoryCard(context, workout)),
+          ...provider.workouts.map(
+            (workout) => _buildWorkoutHistoryCard(context, workout),
+          ),
       ],
     );
   }
@@ -351,94 +453,154 @@ class _HomeScreenState extends State<HomeScreen> {
     return plans;
   }
 
-  Widget _buildRoutineCard(BuildContext context, WorkoutProvider provider, WorkoutPlan plan) {
-     final settings = context.read<SettingsProvider>();
-     final dayName = settings.getDayName(plan.dayNumber);
-     return Card(
-       key: ValueKey('plan_${plan.id}'),
-       color: Theme.of(context).colorScheme.surfaceContainerHigh,
-       margin: const EdgeInsets.only(bottom: 12),
-       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.outline)),
-       child: ListTile(
-         contentPadding: const EdgeInsets.all(16),
-         leading: Container(
-           width: 44,
-           height: 44,
-           decoration: BoxDecoration(
-             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-             borderRadius: BorderRadius.circular(10),
-           ),
-           child: Center(
-             child: Text(
-               dayName,
-               style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12),
-             ),
-           ),
-         ),
-         title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-         subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')} • ${Translations.of(context).get('day')} ${plan.dayNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-         trailing: Row(
-           mainAxisSize: MainAxisSize.min,
-           children: [
-             IconButton(
-               icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurfaceVariant),
-               onPressed: () {
-                 Navigator.push(context, MaterialPageRoute(builder: (_) => CreateRoutineScreen(existingPlan: plan)));
-               },
-             ),
-             IconButton(
-               icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.secondary),
-               onPressed: () => _startWorkoutFromPlan(context, plan),
-             ),
-           ],
-         ),
-       ),
-     );
+  Widget _buildRoutineCard(
+    BuildContext context,
+    WorkoutProvider provider,
+    WorkoutPlan plan,
+  ) {
+    final settings = context.read<SettingsProvider>();
+    final dayName = settings.getDayName(plan.dayNumber);
+    return Card(
+      key: ValueKey('plan_${plan.id}'),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              dayName,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          plan.name,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          '${plan.exercises.length} ${Translations.of(context).get('exercises_label')} • ${Translations.of(context).get('day')} ${plan.dayNumber}',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.edit,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateRoutineScreen(existingPlan: plan),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.play_arrow,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              onPressed: () => _startWorkoutFromPlan(context, plan),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildWorkoutHistoryCard(BuildContext context, Workout workout) {
-     return GestureDetector(
-       key: ValueKey('workout_${workout.id}'),
-       onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => WorkoutDetailScreen(workoutId: workout.id!)),
-          );
-       },
-       child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
+    final locale = context.read<SettingsProvider>().intlLocale;
+    return GestureDetector(
+      key: ValueKey('workout_${workout.id}'),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WorkoutDetailScreen(workoutId: workout.id!),
           ),
-          child: Row(
-            children: [
-               Container(
-                 padding: const EdgeInsets.all(10),
-                 decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.secondary),
-               ),
-               const SizedBox(width: 16),
-               Expanded(
-                 child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                      Text(workout.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(formatDateWithTime(workout.startTime), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                   ],
-                 ),
-               ),
-               Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ],
-          ),
-       ),
-     );
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.check_circle_outline,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    workout.name,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formatDateWithTime(workout.startTime, locale: locale),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildChartSection() {
@@ -458,11 +620,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Row(
               children: [
-                _buildChartTab('volume', Translations.of(context).get('volume')),
+                _buildChartTab(
+                  'volume',
+                  Translations.of(context).get('volume'),
+                ),
                 _buildChartTab('reps', Translations.of(context).get('reps')),
                 _buildChartTab('sets', Translations.of(context).get('sets')),
               ],
-            )
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -483,16 +648,22 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.only(left: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
@@ -503,10 +674,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildWeeklyChart() {
     if (_weeklyVolumes.isEmpty) return const SizedBox.shrink();
-    
+
     List<double> activeData;
     String prefix = '';
-    
+
     switch (_selectedChartType) {
       case 'reps':
         activeData = _weeklyReps;
@@ -519,7 +690,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final settings = context.read<SettingsProvider>();
         // Volumes are stored as kg × reps; convert to display unit
         if (settings.measurementSystem == 'imperial') {
-          activeData = _weeklyVolumes.map((v) => settings.displayWeight(v)).toList();
+          activeData = _weeklyVolumes
+              .map((v) => settings.displayWeight(v))
+              .toList();
         } else {
           activeData = _weeklyVolumes;
         }
@@ -533,17 +706,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final t = Translations.of(context);
-    final days = [t.get('mon'), t.get('tue'), t.get('wed'), t.get('thu'), t.get('fri'), t.get('sat'), t.get('sun')];
-    
+    final days = [
+      t.get('mon'),
+      t.get('tue'),
+      t.get('wed'),
+      t.get('thu'),
+      t.get('fri'),
+      t.get('sat'),
+      t.get('sun'),
+    ];
+
     return Container(
       height: 180, // Increased height to prevent overflow
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1.5,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -553,23 +741,26 @@ class _HomeScreenState extends State<HomeScreen> {
           final val = activeData[index];
           final heightFactor = val / maxVal;
           final isToday = index == 6; // Last item is today
-          
-          final targetDayIndex = ((DateTime.now().weekday - 1 - (6 - index)) % 7 + 7) % 7;
+
+          final targetDayIndex =
+              ((DateTime.now().weekday - 1 - (6 - index)) % 7 + 7) % 7;
           final label = days[targetDayIndex];
-          
+
           return Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (val > 0) 
+                if (val > 0)
                   Container(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
                       '${val.toStringAsFixed(0)}${prefix.isNotEmpty ? ' $prefix' : ''}',
                       style: TextStyle(
-                        color: isToday ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary, 
-                        fontSize: 9, 
-                        fontWeight: FontWeight.bold
+                        color: isToday
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.secondary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
@@ -582,12 +773,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     alignment: Alignment.bottomCenter,
                     child: Container(
                       width: 24,
-                      height: heightFactor > 0 ? (heightFactor * 90).clamp(2.0, 90.0) : 2.0,
+                      height: heightFactor > 0
+                          ? (heightFactor * 90).clamp(2.0, 90.0)
+                          : 2.0,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: isToday 
-                            ? [const Color(0xFF8338EC), Theme.of(context).colorScheme.primary]
-                            : [Theme.of(context).colorScheme.secondary, const Color(0xFF00A383)],
+                          colors: isToday
+                              ? [
+                                  const Color(0xFF8338EC),
+                                  Theme.of(context).colorScheme.primary,
+                                ]
+                              : [
+                                  Theme.of(context).colorScheme.secondary,
+                                  const Color(0xFF00A383),
+                                ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -600,7 +799,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isToday ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isToday
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                   ),
@@ -647,11 +848,21 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               Translations.of(context).get('muscle_groups'),
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             GestureDetector(
               onTap: () => setState(() => _selectedIndex = 3),
-              child: Text(Translations.of(context).get('more'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
+              child: Text(
+                Translations.of(context).get('more'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -662,7 +873,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }),
         const SizedBox(height: 16),
         _muscleGroupData.isEmpty
-            ? _buildEmptyChartPlaceholder(Translations.of(context).get('no_workout_data_yet'))
+            ? _buildEmptyChartPlaceholder(
+                Translations.of(context).get('no_workout_data_yet'),
+              )
             : _buildDonutChart(_muscleGroupData, _muscleColors),
       ],
     );
@@ -681,16 +894,22 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.transparent : Theme.of(context).colorScheme.surfaceContainerHigh,
+                color: isSelected
+                    ? Colors.transparent
+                    : Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Text(
                 t.get(key),
                 style: TextStyle(
-                  color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -731,26 +950,47 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               t.get('body_progress'),
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             GestureDetector(
               onTap: () => _showBodyStatPicker(context, settings),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       t.get(_selectedBodyStat),
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary, size: 18),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
@@ -767,21 +1007,41 @@ class _HomeScreenState extends State<HomeScreen> {
         Center(
           child: GestureDetector(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.edit, color: Theme.of(context).colorScheme.primary, size: 16),
+                  Icon(
+                    Icons.edit,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
-                  Text(t.get('update_measurements'), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(
+                    t.get('update_measurements'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -810,11 +1070,22 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 16),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              Text(t.get('select_measurement'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                t.get('select_measurement'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               Expanded(
                 child: ListView(
@@ -823,16 +1094,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     ..._bodyStatKeys.entries.map((entry) {
                       final isSelected = _selectedBodyStat == entry.key;
                       return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHigh,
+                          color: isSelected
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.15)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline),
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                         child: ListTile(
                           dense: true,
-                          title: Text(t.get(entry.key), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                          trailing: isSelected ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.secondary, size: 20) : null,
+                          title: Text(
+                            t.get(entry.key),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check_circle,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                  size: 20,
+                                )
+                              : null,
                           onTap: () {
                             setState(() => _selectedBodyStat = entry.key);
                             _loadBodyProgressData();
@@ -884,7 +1184,10 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1.5,
+        ),
       ),
       child: CustomPaint(
         size: Size.infinite,
@@ -900,24 +1203,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDonutChart(Map<String, double> data, Map<String, Color> colorMap) {
+  Widget _buildDonutChart(
+    Map<String, double> data,
+    Map<String, Color> colorMap,
+  ) {
     final total = data.values.fold(0.0, (a, b) => a + b);
-    if (total == 0) return _buildEmptyChartPlaceholder(Translations.of(context).get('no_data'));
+    if (total == 0)
+      return _buildEmptyChartPlaceholder(
+        Translations.of(context).get('no_data'),
+      );
 
     // Sort by value descending, take top groups
-    final sorted = data.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    
+    final sorted = data.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
     // Build segments with percentages
     final segments = <_ChartSegment>[];
     for (final e in sorted) {
       final pct = (e.value / total * 100);
       if (pct < 1) continue; // Skip tiny segments
-      segments.add(_ChartSegment(
-        label: e.key,
-        value: e.value,
-        percentage: pct,
-        color: colorMap[e.key] ?? Color((e.key.hashCode & 0x00FFFFFF) | 0xFF444444),
-      ));
+      segments.add(
+        _ChartSegment(
+          label: e.key,
+          value: e.value,
+          percentage: pct,
+          color:
+              colorMap[e.key] ??
+              Color((e.key.hashCode & 0x00FFFFFF) | 0xFF444444),
+        ),
+      );
     }
 
     return Container(
@@ -925,7 +1239,10 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1.5,
+        ),
       ),
       child: Column(
         children: [
@@ -954,7 +1271,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Text(
                         Translations.of(context).get('sets_label'),
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -968,24 +1288,31 @@ class _HomeScreenState extends State<HomeScreen> {
             spacing: 16,
             runSpacing: 8,
             alignment: WrapAlignment.center,
-            children: segments.map((s) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: s.color,
-                    shape: BoxShape.circle,
+            children: segments
+                .map(
+                  (s) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: s.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${s.label} ${s.percentage.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${s.label} ${s.percentage.toStringAsFixed(1)}%',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
-                ),
-              ],
-            )).toList(),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -1005,11 +1332,21 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               Translations.of(context).get('calories_burned'),
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             GestureDetector(
               onTap: () => setState(() => _selectedIndex = 3),
-              child: Text(Translations.of(context).get('more'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
+              child: Text(
+                Translations.of(context).get('more'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -1020,7 +1357,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }),
         const SizedBox(height: 16),
         _caloriesData.isEmpty
-            ? _buildEmptyChartPlaceholder(Translations.of(context).get('no_calorie_data_yet'))
+            ? _buildEmptyChartPlaceholder(
+                Translations.of(context).get('no_calorie_data_yet'),
+              )
             : _buildCaloriesChart(),
       ],
     );
@@ -1030,14 +1369,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final maxCal = _caloriesData
         .map((d) => (d['calories'] as num).toDouble())
         .fold(10.0, (a, b) => b > a ? b : a);
-    final yMax = ((maxCal / 20).ceil() * 20).toDouble().clamp(20.0, double.infinity);
+    final yMax = ((maxCal / 20).ceil() * 20).toDouble().clamp(
+      20.0,
+      double.infinity,
+    );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 20, 16, 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1.5,
+        ),
       ),
       child: SizedBox(
         height: 180,
@@ -1060,30 +1405,60 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1.5,
+        ),
       ),
       child: Center(
-        child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
+        child: Text(
+          message,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
+        ),
       ),
     );
   }
 
-  List<Widget> _buildNextTrainingCards(WorkoutProvider provider, SettingsProvider settings) {
+  List<Widget> _buildNextTrainingCards(
+    WorkoutProvider provider,
+    SettingsProvider settings,
+  ) {
     final plans = _getSortedPlans(provider);
-    
+
     if (plans.isEmpty) {
-       return [
-         Container(
-           padding: const EdgeInsets.all(16),
-           decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
-           child: Center(child: Text(Translations.of(context).get('no_routines'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
-         )
-       ];
+      return [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Center(
+            child: Text(
+              Translations.of(context).get('no_routines'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ];
     }
-    
+
     return plans.map((plan) {
       final t = Translations.of(context);
-      final days = [t.get('monday'), t.get('tuesday'), t.get('wednesday'), t.get('thursday'), t.get('friday'), t.get('saturday'), t.get('sunday')];
+      final days = [
+        t.get('monday'),
+        t.get('tuesday'),
+        t.get('wednesday'),
+        t.get('thursday'),
+        t.get('friday'),
+        t.get('saturday'),
+        t.get('sunday'),
+      ];
       return GestureDetector(
         onTap: () => _startWorkoutFromPlan(context, plan),
         child: Container(
@@ -1103,7 +1478,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
                     width: 2,
                   ),
                 ),
@@ -1122,7 +1499,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.autoPositioning ? t.get('auto_scheduled') : '${t.get('every')} ${days[plan.dayNumber - 1]}',
+                      settings.autoPositioning
+                          ? t.get('auto_scheduled')
+                          : '${t.get('every')} ${days[plan.dayNumber - 1]}',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 13,
@@ -1157,7 +1536,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
-  List<WorkoutPlan> _getPlansForDay(DateTime date, WorkoutProvider provider, SettingsProvider settings) {
+  List<WorkoutPlan> _getPlansForDay(
+    DateTime date,
+    WorkoutProvider provider,
+    SettingsProvider settings,
+  ) {
     if (provider.workoutPlans.isEmpty) return [];
 
     if (settings.autoPositioning) {
@@ -1167,7 +1550,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final planIndex = dayIndex % provider.workoutPlans.length;
       return [provider.workoutPlans[planIndex]];
     } else {
-      return provider.workoutPlans.where((p) => p.dayNumber == date.weekday).toList();
+      return provider.workoutPlans
+          .where((p) => p.dayNumber == date.weekday)
+          .toList();
     }
   }
 
@@ -1193,18 +1578,44 @@ class _HomeScreenState extends State<HomeScreen> {
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
-        leftChevronIcon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.secondary, size: 20),
-        rightChevronIcon: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.secondary, size: 20),
-        titleTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
+        leftChevronIcon: Icon(
+          Icons.arrow_back,
+          color: Theme.of(context).colorScheme.secondary,
+          size: 20,
+        ),
+        rightChevronIcon: Icon(
+          Icons.arrow_forward,
+          color: Theme.of(context).colorScheme.secondary,
+          size: 20,
+        ),
+        titleTextStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
-        weekendStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+        weekdayStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+        weekendStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       calendarStyle: CalendarStyle(
-        defaultTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
-        weekendTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
-        outsideTextStyle: TextStyle(color: Theme.of(context).colorScheme.outlineVariant),
+        defaultTextStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+        ),
+        weekendTextStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+        ),
+        outsideTextStyle: TextStyle(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
         todayDecoration: BoxDecoration(
           color: Theme.of(context).colorScheme.outline,
           shape: BoxShape.circle,
@@ -1220,14 +1631,16 @@ class _HomeScreenState extends State<HomeScreen> {
           final isOff = provider.isOffDay(date);
           final plans = _getPlansForDay(date, provider, settings);
           final hasPlan = !isOff && plans.isNotEmpty;
-          
+
           return Container(
             margin: const EdgeInsets.all(4),
             alignment: Alignment.center,
             child: Text(
               '${date.day}',
               style: TextStyle(
-                color: hasPlan ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
+                color: hasPlan
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: hasPlan ? FontWeight.bold : FontWeight.normal,
                 fontSize: 16,
               ),
@@ -1238,9 +1651,14 @@ class _HomeScreenState extends State<HomeScreen> {
           return Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
-                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
               ),
               margin: const EdgeInsets.all(6.0),
               width: 35,
@@ -1248,13 +1666,18 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: Text(
                 '${day.day}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           );
         },
         markerBuilder: (context, date, events) {
-          final workouts = settings.displayAllData ? provider.getWorkoutsForDay(date) : [];
+          final workouts = settings.displayAllData
+              ? provider.getWorkoutsForDay(date)
+              : [];
           final plans = _getPlansForDay(date, provider, settings);
           final isOff = provider.isOffDay(date);
 
@@ -1262,22 +1685,42 @@ class _HomeScreenState extends State<HomeScreen> {
           if (workouts.isNotEmpty) {
             final w = workouts.first;
             if (w.completionPercentage >= 100.0) {
-              markers.add(Icon(Icons.check_circle, size: 14, color: Theme.of(context).colorScheme.secondary));
+              markers.add(
+                Icon(
+                  Icons.check_circle,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              );
             } else {
-              markers.add(Text('${w.completionPercentage.toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 10, fontWeight: FontWeight.bold)));
+              markers.add(
+                Text(
+                  '${w.completionPercentage.toInt()}%',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
             }
-          } else if (!isOff && plans.isNotEmpty && date.isAfter(DateTime.now().subtract(const Duration(days: 1)))) {
-            markers.add(Icon(Icons.fitness_center, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant));
+          } else if (!isOff &&
+              plans.isNotEmpty &&
+              date.isAfter(DateTime.now().subtract(const Duration(days: 1)))) {
+            markers.add(
+              Icon(
+                Icons.fitness_center,
+                size: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            );
           }
-          
+
           if (markers.isNotEmpty) {
-             return Positioned(
-               bottom: 4,
-               child: Row(
-                 mainAxisSize: MainAxisSize.min,
-                 children: markers,
-               ),
-             );
+            return Positioned(
+              bottom: 4,
+              child: Row(mainAxisSize: MainAxisSize.min, children: markers),
+            );
           }
           return null;
         },
@@ -1285,8 +1728,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<Widget> _buildWorkoutsForDay(WorkoutProvider provider, SettingsProvider settings, DateTime day) {
-    final workouts = settings.displayAllData ? provider.getWorkoutsForDay(day) : [];
+  List<Widget> _buildWorkoutsForDay(
+    WorkoutProvider provider,
+    SettingsProvider settings,
+    DateTime day,
+  ) {
+    final workouts = settings.displayAllData
+        ? provider.getWorkoutsForDay(day)
+        : [];
     final isOffDay = provider.isOffDay(day);
     List<Widget> children = [];
 
@@ -1294,106 +1743,189 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (workouts.isEmpty && isSameDay(day, DateTime.now())) {
       children.add(
-         ElevatedButton.icon(
-            onPressed: () {
-                const name = 'Workout';
-                provider.startWorkout(name);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ActiveWorkoutScreen()),
-                );
-            },
-            icon: const Icon(Icons.play_arrow),
-            label: Text(Translations.of(context).get('start_free_workout')),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-         )
+        ElevatedButton.icon(
+          onPressed: () {
+            const name = 'Workout';
+            provider.startWorkout(name);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ActiveWorkoutScreen()),
+            );
+          },
+          icon: const Icon(Icons.play_arrow),
+          label: Text(Translations.of(context).get('start_free_workout')),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        ),
       );
     }
-    
+
     if (!isOffDay && plannedRoutines.isNotEmpty) {
-       children.add(const SizedBox(height: 16));
-       children.add(Text(Translations.of(context).get('scheduled_routines'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold)));
-       children.add(const SizedBox(height: 8));
-       children.addAll(plannedRoutines.map((plan) => Card(
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1)),
-          child: ListTile(
-             leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.primary),
-             title: Text(plan.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-             subtitle: Text('${plan.exercises.length} ${Translations.of(context).get('exercises_label')}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-             trailing: IconButton(
-                icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.secondary),
-                onPressed: () => _startWorkoutFromPlan(context, plan),
-             ),
+      children.add(const SizedBox(height: 16));
+      children.add(
+        Text(
+          Translations.of(context).get('scheduled_routines'),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
           ),
-       )));
-    }
-    
-    if (workouts.isNotEmpty) {
-       children.add(const SizedBox(height: 16));
-       children.add(Text(Translations.of(context).get('completed_workouts'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.bold)));
-       children.add(const SizedBox(height: 8));
-      children.addAll(workouts.map((workout) {
-        return Card(
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Theme.of(context).colorScheme.outline),
-          ),
-          child: ListTile(
-            leading: Icon(Icons.check_circle, color: Theme.of(context).colorScheme.secondary),
-            title: Text(workout.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-            subtitle: Text(
-              '${formatDate(workout.startTime)} • ${formatDuration(workout.totalDuration)}',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+        ),
+      );
+      children.add(const SizedBox(height: 8));
+      children.addAll(
+        plannedRoutines.map(
+          (plan) => Card(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1,
+              ),
             ),
-            trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => WorkoutDetailScreen(workoutId: workout.id!)),
-            ),
-            onLongPress: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  title: Text(Translations.of(context).get('delete'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  content: Text(Translations.of(context).get('delete_workout_confirm'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(Translations.of(context).get('cancel')),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        provider.deleteWorkout(workout.id!);
-                        setState(() {
-                           _loadWeeklyData(); // refresh chart
-                        });
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(Translations.of(context).get('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
-                    ),
-                  ],
+            child: ListTile(
+              leading: Icon(
+                Icons.assignment,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text(
+                plan.name,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
                 ),
-              );
-            },
+              ),
+              subtitle: Text(
+                '${plan.exercises.length} ${Translations.of(context).get('exercises_label')}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.play_arrow,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                onPressed: () => _startWorkoutFromPlan(context, plan),
+              ),
+            ),
           ),
-        );
-      }).toList());
+        ),
+      );
+    }
+
+    if (workouts.isNotEmpty) {
+      children.add(const SizedBox(height: 16));
+      children.add(
+        Text(
+          Translations.of(context).get('completed_workouts'),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+      children.add(const SizedBox(height: 8));
+      children.addAll(
+        workouts.map((workout) {
+          return Card(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Theme.of(context).colorScheme.outline),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              title: Text(
+                workout.name,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                '${formatDate(workout.startTime, locale: settings.intlLocale)} • ${formatDuration(workout.totalDuration)}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkoutDetailScreen(workoutId: workout.id!),
+                ),
+              ),
+              onLongPress: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    title: Text(
+                      Translations.of(context).get('delete'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    content: Text(
+                      Translations.of(context).get('delete_workout_confirm'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(Translations.of(context).get('cancel')),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          provider.deleteWorkout(workout.id!);
+                          setState(() {
+                            _loadWeeklyData(); // refresh chart
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        child: Text(
+                          Translations.of(context).get('delete'),
+                          style: const TextStyle(color: Color(0xFFFF6B6B)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        }).toList(),
+      );
     } else if (isOffDay) {
-       children.add(
-         Center(
-           child: Padding(
-             padding: const EdgeInsets.all(16.0),
-             child: Text(Translations.of(context).get('rest_day'), style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 16, fontWeight: FontWeight.bold)),
-           ),
-         )
-       );
+      children.add(
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              Translations.of(context).get('rest_day'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.secondary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     return children;
@@ -1403,7 +1935,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 0.5,
+          ),
+        ),
       ),
       child: BottomNavigationBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1412,8 +1949,14 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Theme.of(context).colorScheme.secondary,
         unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+        selectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
         items: [
           BottomNavigationBarItem(
             icon: const Padding(
@@ -1551,7 +2094,10 @@ class _DonutPainter extends CustomPainter {
 
         textPainter.paint(
           canvas,
-          Offset(labelX - textPainter.width / 2, labelY - textPainter.height / 2),
+          Offset(
+            labelX - textPainter.width / 2,
+            labelY - textPainter.height / 2,
+          ),
         );
       }
 
@@ -1578,7 +2124,12 @@ class _CaloriesChartPainter extends CustomPainter {
   final Color gridColor;
   final Color labelColor;
 
-  _CaloriesChartPainter({required this.data, required this.yMax, required this.gridColor, required this.labelColor});
+  _CaloriesChartPainter({
+    required this.data,
+    required this.yMax,
+    required this.gridColor,
+    required this.labelColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1597,7 +2148,11 @@ class _CaloriesChartPainter extends CustomPainter {
     final ySteps = 4;
     for (int i = 0; i <= ySteps; i++) {
       final y = 10 + chartHeight - (chartHeight * i / ySteps);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 16, y), gridPaint);
+      canvas.drawLine(
+        Offset(leftPad, y),
+        Offset(size.width - 16, y),
+        gridPaint,
+      );
 
       final label = (yMax * i / ySteps).toStringAsFixed(0);
       final tp = TextPainter(
@@ -1611,7 +2166,9 @@ class _CaloriesChartPainter extends CustomPainter {
     }
 
     // X positions
-    final itemWidth = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+    final itemWidth = data.length > 1
+        ? chartWidth / (data.length - 1)
+        : chartWidth;
 
     // Draw line
     final linePaint = Paint()
@@ -1629,7 +2186,8 @@ class _CaloriesChartPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final cal = (data[i]['calories'] as num).toDouble();
       final x = leftPad + (data.length > 1 ? i * itemWidth : chartWidth / 2);
-      final y = 10 + chartHeight - (cal / yMax * chartHeight).clamp(0, chartHeight);
+      final y =
+          10 + chartHeight - (cal / yMax * chartHeight).clamp(0, chartHeight);
       points.add(Offset(x, y));
 
       if (i == 0) {
@@ -1665,7 +2223,11 @@ class _CaloriesChartPainter extends CustomPainter {
         final tp = TextPainter(
           text: TextSpan(
             text: text,
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -1679,7 +2241,10 @@ class _CaloriesChartPainter extends CustomPainter {
           const Radius.circular(8),
         );
         canvas.drawRRect(bgRect, Paint()..color = const Color(0xFFFF6B4A));
-        tp.paint(canvas, Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2));
+        tp.paint(
+          canvas,
+          Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2),
+        );
       }
     }
   }
@@ -1736,7 +2301,11 @@ class _BodyProgressPainter extends CustomPainter {
 
     for (int i = 0; i <= ySteps; i++) {
       final y = topPad + chartHeight - (chartHeight * i / ySteps);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - rightPad, y), gridPaint);
+      canvas.drawLine(
+        Offset(leftPad, y),
+        Offset(size.width - rightPad, y),
+        gridPaint,
+      );
 
       final val = yMin + yRange * i / ySteps;
       final tp = TextPainter(
@@ -1753,19 +2322,31 @@ class _BodyProgressPainter extends CustomPainter {
     final unitTp = TextPainter(
       text: TextSpan(
         text: unitLabel,
-        style: TextStyle(color: labelColor, fontSize: 9, fontStyle: FontStyle.italic),
+        style: TextStyle(
+          color: labelColor,
+          fontSize: 9,
+          fontStyle: FontStyle.italic,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    unitTp.paint(canvas, Offset(leftPad - unitTp.width - 6, topPad - unitTp.height - 2));
+    unitTp.paint(
+      canvas,
+      Offset(leftPad - unitTp.width - 6, topPad - unitTp.height - 2),
+    );
 
     // Compute points
-    final itemWidth = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+    final itemWidth = data.length > 1
+        ? chartWidth / (data.length - 1)
+        : chartWidth;
     final points = <Offset>[];
     for (int i = 0; i < data.length; i++) {
       final v = (data[i]['value'] as num).toDouble();
       final x = leftPad + (data.length > 1 ? i * itemWidth : chartWidth / 2);
-      final y = topPad + chartHeight - ((v - yMin) / yRange * chartHeight).clamp(0, chartHeight);
+      final y =
+          topPad +
+          chartHeight -
+          ((v - yMin) / yRange * chartHeight).clamp(0, chartHeight);
       points.add(Offset(x, y));
     }
 
@@ -1817,7 +2398,11 @@ class _BodyProgressPainter extends CustomPainter {
       final v = (data[i]['value'] as num).toDouble();
 
       // Outer glow
-      canvas.drawCircle(pt, 6, Paint()..color = const Color(0xFF8338EC).withValues(alpha: 0.25));
+      canvas.drawCircle(
+        pt,
+        6,
+        Paint()..color = const Color(0xFF8338EC).withValues(alpha: 0.25),
+      );
       // Dot
       canvas.drawCircle(pt, 4, Paint()..color = const Color(0xFF8338EC));
       canvas.drawCircle(pt, 2.5, Paint()..color = Colors.white);
@@ -1827,17 +2412,28 @@ class _BodyProgressPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: valText,
-          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
 
       final bgRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(pt.dx, pt.dy - 16), width: tp.width + 10, height: tp.height + 6),
+        Rect.fromCenter(
+          center: Offset(pt.dx, pt.dy - 16),
+          width: tp.width + 10,
+          height: tp.height + 6,
+        ),
         const Radius.circular(6),
       );
       canvas.drawRRect(bgRect, Paint()..color = const Color(0xFF8338EC));
-      tp.paint(canvas, Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2));
+      tp.paint(
+        canvas,
+        Offset(pt.dx - tp.width / 2, pt.dy - 16 - tp.height / 2),
+      );
 
       // Date label below x-axis
       final rawDate = data[i]['date'] as String? ?? '';
@@ -1849,10 +2445,16 @@ class _BodyProgressPainter extends CustomPainter {
         }
       }
       final dateTp = TextPainter(
-        text: TextSpan(text: dateStr, style: TextStyle(color: labelColor, fontSize: 8)),
+        text: TextSpan(
+          text: dateStr,
+          style: TextStyle(color: labelColor, fontSize: 8),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
-      dateTp.paint(canvas, Offset(pt.dx - dateTp.width / 2, topPad + chartHeight + 6));
+      dateTp.paint(
+        canvas,
+        Offset(pt.dx - dateTp.width / 2, topPad + chartHeight + 6),
+      );
     }
   }
 

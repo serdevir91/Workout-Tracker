@@ -8,7 +8,6 @@ import '../utils/exercise_db.dart';
 import '../utils/formatters.dart';
 import '../l10n/translations.dart';
 
-
 /// Full exercise detail screen matching the app design.
 /// Can be opened from:
 /// - ExerciseLibraryScreen (view-only mode, no exerciseId)
@@ -34,6 +33,12 @@ class ExerciseInfoScreen extends StatefulWidget {
   /// Rest duration in seconds from the workout plan.
   final int restSeconds;
 
+  /// Current exercise position inside the swipeable workout flow.
+  final int? currentExerciseIndex;
+
+  /// Total exercise count inside the swipeable workout flow.
+  final int? totalExerciseCount;
+
   /// Override cardio detection. If null, auto-detected from library + keywords.
   final bool? isCardio;
 
@@ -46,9 +51,10 @@ class ExerciseInfoScreen extends StatefulWidget {
     this.targetReps = 0,
     this.targetWeight = 0,
     this.restSeconds = 60,
+    this.currentExerciseIndex,
+    this.totalExerciseCount,
     this.isCardio,
   });
-
 
   @override
   State<ExerciseInfoScreen> createState() => _ExerciseInfoScreenState();
@@ -58,7 +64,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _repsController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
-  final TextEditingController _manualDurationController = TextEditingController();
+  final TextEditingController _manualDurationController =
+      TextEditingController();
+  late String _exerciseName;
+  late List<String> _imageUrls;
   late bool _isCardio;
   bool _useManualDuration = false;
   int _currentImageIndex = 0;
@@ -71,8 +80,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   @override
   void initState() {
     super.initState();
+    _exerciseName = widget.exerciseName;
+    _imageUrls = List<String>.from(widget.imageUrls);
     // Use provided isCardio if available, otherwise keyword-based detection initially
-    _isCardio = widget.isCardio ?? ActiveExercise.detectCardio(widget.exerciseName);
+    _isCardio =
+        widget.isCardio ?? ActiveExercise.detectCardio(_exerciseName);
     _loadHistory();
     _startImageCycle();
 
@@ -92,7 +104,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         if (draftW.isNotEmpty) {
           _weightController.text = draftW;
         } else if (widget.targetWeight > 0) {
-          _weightController.text = widget.targetWeight == widget.targetWeight.toInt()
+          _weightController.text =
+              widget.targetWeight == widget.targetWeight.toInt()
               ? widget.targetWeight.toInt().toString()
               : widget.targetWeight.toStringAsFixed(1);
         }
@@ -118,19 +131,23 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
   /// Start auto-cycling between exercise images (GIF-like effect).
   void _startImageCycle() {
-    if (widget.imageUrls.length <= 1) return;
+    if (_imageUrls.length <= 1) return;
     _imageCycleTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) {
       if (mounted) {
         setState(() {
-          _currentImageIndex = (_currentImageIndex + 1) % widget.imageUrls.length;
+          _currentImageIndex =
+              (_currentImageIndex + 1) % _imageUrls.length;
         });
       }
     });
   }
 
   Future<void> _detectCardioFromLibrary() async {
-    final muscleGroup = await ExerciseDB.findMuscleGroup(widget.exerciseName);
-    final result = ActiveExercise.detectCardio(widget.exerciseName, muscleGroup: muscleGroup);
+    final muscleGroup = await ExerciseDB.findMuscleGroup(_exerciseName);
+    final result = ActiveExercise.detectCardio(
+      _exerciseName,
+      muscleGroup: muscleGroup,
+    );
     if (result != _isCardio && mounted) {
       setState(() {
         _isCardio = result;
@@ -141,7 +158,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   Future<void> _loadHistory() async {
     try {
       final provider = context.read<WorkoutProvider>();
-      final history = await provider.getExerciseHistory(widget.exerciseName);
+      final history = await provider.getExerciseHistory(_exerciseName);
       if (mounted) {
         setState(() {
           _history = history;
@@ -149,7 +166,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         });
       }
     } catch (e, _) {
-      debugPrint('⚠️ Error loading history for "${widget.exerciseName}": $e');
+      debugPrint('Error loading history for "$_exerciseName": $e');
       if (mounted) {
         setState(() {
           _historyLoading = false;
@@ -162,9 +179,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   /// Toggle between exercise images (start/end position).
   /// Also resets the auto-cycle timer so the next auto-switch doesn't come too soon.
   void _toggleImage() {
-    if (widget.imageUrls.length <= 1) return;
+    if (_imageUrls.length <= 1) return;
     setState(() {
-      _currentImageIndex = (_currentImageIndex + 1) % widget.imageUrls.length;
+      _currentImageIndex = (_currentImageIndex + 1) % _imageUrls.length;
     });
     // Reset timer on manual tap
     _imageCycleTimer?.cancel();
@@ -172,30 +189,45 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   }
 
   /// Show a bottom sheet with alternative exercises from the same muscle group.
-  Future<void> _showAlternativeExercises(BuildContext context, WorkoutProvider provider) async {
+  Future<void> _showAlternativeExercises(
+    BuildContext context,
+    WorkoutProvider provider,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     final theme = Theme.of(context);
 
     // 1. Find current exercise's muscle group
-    final muscleGroup = await ExerciseDB.findMuscleGroup(widget.exerciseName);
+    final muscleGroup = await ExerciseDB.findMuscleGroup(_exerciseName);
     if (!mounted) return;
     if (muscleGroup.isEmpty) {
       messenger.showSnackBar(
-        SnackBar(content: const Text('Could not find muscle group for this exercise'), backgroundColor: theme.colorScheme.surfaceContainer),
+        SnackBar(
+          content: const Text('Could not find muscle group for this exercise'),
+          backgroundColor: theme.colorScheme.surfaceContainer,
+        ),
       );
       return;
     }
 
     // 2. Get all exercises in the same muscle group
-    final alternatives = await ExerciseDB.getExercisesByMuscleGroup(muscleGroup);
+    final alternatives = await ExerciseDB.getExercisesByMuscleGroup(
+      muscleGroup,
+    );
     // Remove current exercise from alternatives
-    alternatives.removeWhere((e) => (e['name'] as String).toLowerCase() == widget.exerciseName.toLowerCase());
+    alternatives.removeWhere(
+      (e) =>
+          (e['name'] as String).toLowerCase() ==
+          _exerciseName.toLowerCase(),
+    );
 
     if (!mounted) return;
 
     if (alternatives.isEmpty) {
       messenger.showSnackBar(
-        SnackBar(content: Text('No alternative exercises found for $muscleGroup'), backgroundColor: theme.colorScheme.surfaceContainer),
+        SnackBar(
+          content: Text('No alternative exercises found for $muscleGroup'),
+          backgroundColor: theme.colorScheme.surfaceContainer,
+        ),
       );
       return;
     }
@@ -224,7 +256,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   Expanded(
                     child: Text(
                       'Alternative exercises ($muscleGroup)',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -247,33 +283,59 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     leading: imageUrl.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(imageUrl, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, e, st) => Container(
-                              width: 50, height: 50,
-                              decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
-                              child: Icon(Icons.fitness_center, color: theme.colorScheme.onSurfaceVariant, size: 20),
-                            )),
+                            child: Image.network(
+                              imageUrl,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, e, st) => Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHigh,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
                           )
                         : Container(
-                            width: 50, height: 50,
-                            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
-                            child: Icon(Icons.fitness_center, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.fitness_center,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              size: 20,
+                            ),
                           ),
-                    title: Text(name, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600)),
-                    trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-                    onTap: () {
+                    title: Text(
+                      name,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    onTap: () async {
                       Navigator.pop(ctx);
-                      // Replace current exercise with the alternative
-                      if (widget.exerciseId != null) {
-                        provider.deleteExercise(widget.exerciseId!);
-                        provider.addExercise(name, muscleGroup: muscleGroup);
-                        Navigator.pop(context); // Close exercise info screen
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text('Swapped to: $name'),
-                            backgroundColor: theme.colorScheme.secondary,
-                          ),
-                        );
-                      }
+                      await _swapToAlternative(
+                        alternative: alt,
+                        muscleGroup: muscleGroup,
+                        provider: provider,
+                        messenger: messenger,
+                        theme: theme,
+                      );
                     },
                   );
                 },
@@ -285,11 +347,99 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     );
   }
 
+  Future<void> _swapToAlternative({
+    required Map<String, dynamic> alternative,
+    required String muscleGroup,
+    required WorkoutProvider provider,
+    required ScaffoldMessengerState messenger,
+    required ThemeData theme,
+  }) async {
+    final exerciseId = widget.exerciseId;
+    if (exerciseId == null) return;
+
+    final newName = (alternative['name'] as String?)?.trim() ?? '';
+    if (newName.isEmpty) return;
+
+    await provider.replaceExercise(
+      exerciseId,
+      newName,
+      muscleGroup: muscleGroup,
+    );
+
+    List<String> newImages = [];
+    final rawImages = alternative['images'];
+    if (rawImages is List) {
+      newImages = rawImages
+          .map((img) => img.toString())
+          .where((img) => img.isNotEmpty)
+          .toList();
+    }
+    if (newImages.isEmpty) {
+      final fallback = (alternative['image_url'] as String?) ?? '';
+      if (fallback.isNotEmpty) {
+        newImages = [fallback];
+      }
+    }
+    if (newImages.isEmpty) {
+      final dbExercise = await ExerciseDB.findExercise(newName);
+      final dbImages = (dbExercise?['images'] as List<dynamic>?)
+          ?.map((img) => img.toString())
+          .where((img) => img.isNotEmpty)
+          .toList();
+      if (dbImages != null && dbImages.isNotEmpty) {
+        newImages = dbImages;
+      }
+    }
+
+    final nextCardio = ActiveExercise.detectCardio(
+      newName,
+      muscleGroup: muscleGroup,
+    );
+
+    _imageCycleTimer?.cancel();
+    if (!mounted) return;
+
+    final targetWeightText = widget.targetWeight > 0
+        ? (widget.targetWeight == widget.targetWeight.toInt()
+              ? widget.targetWeight.toInt().toString()
+              : widget.targetWeight.toStringAsFixed(1))
+        : '';
+    final targetRepsText =
+        widget.targetReps > 0 ? widget.targetReps.toString() : '';
+    _weightController.text = targetWeightText;
+    _repsController.text = targetRepsText;
+    _manualDurationController.clear();
+    _commentController.clear();
+    provider.setDraftWeight(exerciseId, targetWeightText);
+    provider.setDraftReps(exerciseId, targetRepsText);
+
+    setState(() {
+      _exerciseName = newName;
+      _imageUrls = newImages;
+      _currentImageIndex = 0;
+      _isCardio = nextCardio;
+      _useManualDuration = false;
+      _historyLoading = true;
+    });
+
+    await _loadHistory();
+    _startImageCycle();
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Swapped to: $newName'),
+        backgroundColor: theme.colorScheme.secondary,
+      ),
+    );
+  }
+
   void _addSet(WorkoutProvider provider) {
     if (widget.exerciseId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot add sets in view-only mode. Open an active workout first.'),
+          content: Text(
+            'Cannot add sets in view-only mode. Open an active workout first.',
+          ),
           backgroundColor: Color(0xFFFF6B6B),
         ),
       );
@@ -312,7 +462,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         }
       } else {
         // Timer mode: save elapsed timer duration as reps (minutes), weight = 0
-        final elapsed = provider.exerciseElapsedSeconds[widget.exerciseId!] ?? 0;
+        final elapsed =
+            provider.exerciseElapsedSeconds[widget.exerciseId!] ?? 0;
         mins = elapsed ~/ 60;
         if (mins <= 0) mins = 1;
         if (provider.isCardioTimerActive(widget.exerciseId!)) {
@@ -336,11 +487,14 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     final reps = int.tryParse(_repsController.text) ?? 0;
     if (reps <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter reps'), backgroundColor: Theme.of(context).colorScheme.surfaceContainer),
+        SnackBar(
+          content: Text('Please enter reps'),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        ),
       );
       return;
     }
-    
+
     // Add set to provider (async operation)
     provider.addSet(widget.exerciseId!, weight, reps);
     provider.setDraftWeight(widget.exerciseId!, _weightController.text);
@@ -350,7 +504,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Set added: ${weight > 0 ? "${weight}kg" : "BW"} × $reps reps'),
+        content: Text(
+          'Set added: ${weight > 0 ? "${weight}kg" : "BW"} × $reps reps',
+        ),
         backgroundColor: Theme.of(context).colorScheme.secondary,
         duration: const Duration(seconds: 2),
       ),
@@ -373,7 +529,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           }
         }
 
-        final bool isInteractive = widget.exerciseId != null && provider.isWorkoutActive;
+        final bool isInteractive =
+            widget.exerciseId != null && provider.isWorkoutActive;
         final int setsDone = currentSets.length;
         final theme = Theme.of(context);
 
@@ -393,31 +550,22 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   onTap: () => Navigator.pop(context),
                   theme: theme,
                 ),
-                actions: [
-                  if (isInteractive) ...[
-                    _buildCircularButton(
-                      icon: Icons.swap_horiz,
-                      onTap: () => _showAlternativeExercises(context, provider),
-                      theme: theme,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  const SizedBox(width: 8),
-                ],
+                actions: const [SizedBox(width: 8)],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
                       // Tap-to-toggle exercise images (start/end position)
-                      if (widget.imageUrls.isNotEmpty)
+                      if (_imageUrls.isNotEmpty)
                         GestureDetector(
                           onTap: _toggleImage,
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             child: Image.network(
-                              widget.imageUrls[_currentImageIndex],
-                              key: ValueKey(widget.imageUrls[_currentImageIndex]),
+                              _imageUrls[_currentImageIndex],
+                              key: ValueKey(
+                                _imageUrls[_currentImageIndex],
+                              ),
                               fit: BoxFit.cover,
                               loadingBuilder: (ctx, child, progress) {
                                 if (progress == null) return child;
@@ -426,7 +574,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                                   child: Center(
                                     child: CircularProgressIndicator(
                                       value: progress.expectedTotalBytes != null
-                                          ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                                          ? progress.cumulativeBytesLoaded /
+                                                progress.expectedTotalBytes!
                                           : null,
                                       color: theme.colorScheme.secondary,
                                       strokeWidth: 2,
@@ -434,31 +583,40 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                                   ),
                                 );
                               },
-                              errorBuilder: (_, e, st) => _buildNoGifPlaceholder(),
+                              errorBuilder: (_, e, st) =>
+                                  _buildNoGifPlaceholder(),
                             ),
                           ),
                         )
                       else
                         _buildNoGifPlaceholder(),
                       // Image index indicator (1/2 dot)
-                      if (widget.imageUrls.length > 1)
+                      if (_imageUrls.length > 1)
                         Positioned(
-                          top: kToolbarHeight + MediaQuery.of(context).padding.top + 4,
+                          top:
+                              kToolbarHeight +
+                              MediaQuery.of(context).padding.top +
+                              4,
                           left: 0,
                           right: 0,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(widget.imageUrls.length, (i) => Container(
-                              width: 8,
-                              height: 8,
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: i == _currentImageIndex
-                                    ? theme.colorScheme.secondary
-                                    : Colors.white.withValues(alpha: 0.4),
+                            children: List.generate(
+                              _imageUrls.length,
+                              (i) => Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: i == _currentImageIndex
+                                      ? theme.colorScheme.secondary
+                                      : Colors.white.withValues(alpha: 0.4),
+                                ),
                               ),
-                            )),
+                            ),
                           ),
                         ),
                       // Bottom gradient overlay for readability
@@ -466,7 +624,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: 120,
+                        height: 170,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -474,57 +632,72 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                                theme.scaffoldBackgroundColor.withValues(
+                                  alpha: 0.8,
+                                ),
                                 theme.scaffoldBackgroundColor,
                               ],
                             ),
                           ),
                         ),
                       ),
-                      // Set counter badge at top-right
-                      if (isInteractive && widget.targetSets > 0)
-                        Positioned(
-                          top: kToolbarHeight + MediaQuery.of(context).padding.top + 8,
-                          right: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface.withValues(alpha: 0.85),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              '$setsDone / ${widget.targetSets} sets',
-                              style: TextStyle(
-                                color: theme.colorScheme.secondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      // Exercise name at bottom of hero
                       Positioned(
-                        bottom: 12,
+                        bottom: 16,
                         left: 16,
                         right: 16,
-                        child: Text(
-                          widget.exerciseName,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: theme.colorScheme.onSurface,
-                            letterSpacing: -0.5,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _exerciseName,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: theme.colorScheme.onSurface,
+                                letterSpacing: -0.5,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if ((widget.totalExerciseCount ?? 0) > 1 ||
+                                (isInteractive && widget.targetSets > 0) ||
+                                isInteractive) ...[
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if ((widget.totalExerciseCount ?? 0) > 1)
+                                    _buildHeroMetaChip(
+                                      theme: theme,
+                                      icon: Icons.swipe,
+                                      label:
+                                          '${(widget.currentExerciseIndex ?? 0) + 1} / ${widget.totalExerciseCount} moves',
+                                    ),
+                                  if (isInteractive && widget.targetSets > 0)
+                                    _buildHeroMetaChip(
+                                      theme: theme,
+                                      icon: Icons.check_circle_outline,
+                                      label:
+                                          '$setsDone / ${widget.targetSets} sets',
+                                      accentColor: theme.colorScheme.secondary,
+                                    ),
+                                  if (isInteractive)
+                                    _buildHeroActionChip(
+                                      theme: theme,
+                                      icon: Icons.swap_horiz,
+                                      label: 'Alternative',
+                                      accentColor: theme.colorScheme.primary,
+                                      onTap: () => _showAlternativeExercises(
+                                        context,
+                                        provider,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
@@ -542,7 +715,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     // ── Metric Cards Row ────────────────────────────
                     ValueListenableBuilder<int>(
                       valueListenable: provider.restTimerNotifier,
-                      builder: (_, v, ch) => _buildMetricCards(provider, setsDone, currentSets, theme),
+                      builder: (_, v, ch) => _buildMetricCards(
+                        provider,
+                        setsDone,
+                        currentSets,
+                        theme,
+                      ),
                     ),
 
                     const SizedBox(height: 16),
@@ -556,11 +734,14 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GestureDetector(
-                          onTap: () => setState(() => _showComment = !_showComment),
+                          onTap: () =>
+                              setState(() => _showComment = !_showComment),
                           child: Row(
                             children: [
                               Icon(
-                                _showComment ? Icons.chat_bubble : Icons.chat_bubble_outline,
+                                _showComment
+                                    ? Icons.chat_bubble
+                                    : Icons.chat_bubble_outline,
                                 size: 16,
                                 color: theme.colorScheme.secondary,
                               ),
@@ -582,11 +763,17 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                           child: TextField(
                             controller: _commentController,
-                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
+                              fontSize: 14,
+                            ),
                             maxLines: 2,
                             decoration: InputDecoration(
                               hintText: 'Optional note for this set...',
-                              hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              hintStyle: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.5),
+                              ),
                               filled: true,
                               fillColor: theme.colorScheme.surfaceContainerHigh,
                               border: OutlineInputBorder(
@@ -636,7 +823,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface.withValues(alpha: 0.85),
             shape: BoxShape.circle,
-            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -645,14 +834,101 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               ),
             ],
           ),
-          child: Icon(icon, size: 18, color: color ?? theme.colorScheme.onSurface),
+          child: Icon(
+            icon,
+            size: 18,
+            color: color ?? theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroMetaChip({
+    required ThemeData theme,
+    required IconData icon,
+    required String label,
+    Color? accentColor,
+  }) {
+    final chipColor = accentColor ?? theme.colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.86),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: chipColor.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: chipColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroActionChip({
+    required ThemeData theme,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? accentColor,
+  }) {
+    final chipColor = accentColor ?? theme.colorScheme.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: chipColor.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: chipColor.withValues(alpha: 0.42)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: chipColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: chipColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// "Add to Workout" section shown in library view-only mode
-  Widget _buildAddToWorkoutButton(WorkoutProvider provider, Translations t, ThemeData theme) {
+  Widget _buildAddToWorkoutButton(
+    WorkoutProvider provider,
+    Translations t,
+    ThemeData theme,
+  ) {
     final plans = provider.workoutPlans;
     if (plans.isEmpty) return const SizedBox.shrink();
 
@@ -667,7 +943,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         child: Material(
           color: Colors.transparent,
@@ -681,10 +959,16 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.15),
+                      color: theme.colorScheme.secondary.withValues(
+                        alpha: 0.15,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.add_circle_outline, color: theme.colorScheme.secondary, size: 22),
+                    child: Icon(
+                      Icons.add_circle_outline,
+                      color: theme.colorScheme.secondary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -710,7 +994,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -720,7 +1007,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     );
   }
 
-  void _showAddToWorkoutSheet(WorkoutProvider provider, Translations t, ThemeData theme) {
+  void _showAddToWorkoutSheet(
+    WorkoutProvider provider,
+    Translations t,
+    ThemeData theme,
+  ) {
     final plans = provider.workoutPlans;
     showModalBottomSheet(
       context: context,
@@ -734,7 +1025,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           children: [
             // Handle bar
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
@@ -749,8 +1041,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${t.get('add_to_workout')}: ${widget.exerciseName}',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      '${t.get('add_to_workout')}: $_exerciseName',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -759,40 +1055,68 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               ),
             ),
             Divider(color: theme.colorScheme.outline),
-            ...plans.map((plan) => ListTile(
-              leading: Container(
-                width: 42, height: 42,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(child: Text(
-                  'D${plan.dayNumber}',
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
-                )),
-              ),
-              title: Text(plan.name, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600)),
-              subtitle: Text(
-                '${plan.exercises.length} exercises',
-                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-              ),
-              trailing: Icon(Icons.add, color: theme.colorScheme.secondary),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final updatedPlan = plan.copyWith(
-                  exercises: [...plan.exercises, PlanExercise(name: widget.exerciseName, sets: 3, reps: 10, weight: 0)],
-                );
-                await provider.saveWorkoutPlan(updatedPlan);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Added "${widget.exerciseName}" to ${plan.name}'),
-                      backgroundColor: theme.colorScheme.secondary,
+            ...plans.map(
+              (plan) => ListTile(
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'D${plan.dayNumber}',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
+                  ),
+                ),
+                title: Text(
+                  plan.name,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  '${plan.exercises.length} exercises',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: Icon(Icons.add, color: theme.colorScheme.secondary),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final updatedPlan = plan.copyWith(
+                    exercises: [
+                      ...plan.exercises,
+                      PlanExercise(
+                        name: _exerciseName,
+                        sets: 3,
+                        reps: 10,
+                        weight: 0,
+                      ),
+                    ],
                   );
-                }
-              },
-            )),
+                  await provider.saveWorkoutPlan(updatedPlan);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Added "$_exerciseName" to ${plan.name}',
+                        ),
+                        backgroundColor: theme.colorScheme.secondary,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -807,11 +1131,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.fitness_center, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2)),
+          Icon(
+            Icons.fitness_center,
+            size: 64,
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+          ),
           const SizedBox(height: 12),
           Text(
             'No animation available',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 14),
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -819,41 +1150,59 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
   }
 
   Widget _buildMetricCards(
-      WorkoutProvider provider, int setsDone, List<ExerciseSet> currentSets, ThemeData theme) {
-
+    WorkoutProvider provider,
+    int setsDone,
+    List<ExerciseSet> currentSets,
+    ThemeData theme,
+  ) {
     if (_isCardio) {
-      final elapsed = provider.exerciseElapsedSeconds[widget.exerciseId ?? -1] ?? 0;
-      final isTimerRunning = widget.exerciseId != null && provider.isCardioTimerActive(widget.exerciseId!);
+      final elapsed =
+          provider.exerciseElapsedSeconds[widget.exerciseId ?? -1] ?? 0;
+      final isTimerRunning =
+          widget.exerciseId != null &&
+          provider.isCardioTimerActive(widget.exerciseId!);
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Expanded(child: _buildMetricCard(
-              icon: Icons.timer_outlined,
-              label: 'Duration',
-              value: elapsed > 0 ? '${elapsed ~/ 60}m' : '–',
-              theme: theme,
-              isActive: isTimerRunning,
-              accentColor: isTimerRunning ? theme.colorScheme.secondary : null,
-            )),
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.timer_outlined,
+                label: 'Duration',
+                value: elapsed > 0 ? '${elapsed ~/ 60}m' : '–',
+                theme: theme,
+                isActive: isTimerRunning,
+                accentColor: isTimerRunning
+                    ? theme.colorScheme.secondary
+                    : null,
+              ),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: _buildMetricCard(
-              icon: isTimerRunning ? Icons.play_circle_fill : Icons.pause_circle_filled,
-              label: 'Status',
-              value: isTimerRunning ? 'Running' : 'Paused',
-              theme: theme,
-              isActive: isTimerRunning,
-              accentColor: isTimerRunning ? theme.colorScheme.secondary : null,
-            )),
+            Expanded(
+              child: _buildMetricCard(
+                icon: isTimerRunning
+                    ? Icons.play_circle_fill
+                    : Icons.pause_circle_filled,
+                label: 'Status',
+                value: isTimerRunning ? 'Running' : 'Paused',
+                theme: theme,
+                isActive: isTimerRunning,
+                accentColor: isTimerRunning
+                    ? theme.colorScheme.secondary
+                    : null,
+              ),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: _buildMetricCard(
-              icon: Icons.check_circle_outline,
-              label: 'Entries',
-              value: '$setsDone',
-              theme: theme,
-              accentColor: theme.colorScheme.secondary,
-            )),
+            Expanded(
+              child: _buildMetricCard(
+                icon: Icons.check_circle_outline,
+                label: 'Entries',
+                value: '$setsDone',
+                theme: theme,
+                accentColor: theme.colorScheme.secondary,
+              ),
+            ),
           ],
         ),
       );
@@ -876,36 +1225,48 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     final inputWeight = double.tryParse(_weightController.text) ?? 0;
     final restSecs = provider.restTimerSeconds;
     final restActive = provider.isRestTimerActive || restSecs > 0;
-    final restDisplay = restActive ? formatDuration(restSecs) : formatDuration(widget.restSeconds > 0 ? widget.restSeconds : 60);
+    final restDisplay = restActive
+        ? formatDuration(restSecs)
+        : formatDuration(widget.restSeconds > 0 ? widget.restSeconds : 60);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Expanded(child: _buildMetricCard(
-            icon: Icons.repeat,
-            label: 'Reps',
-            value: displayReps > 0 ? '$displayReps' : '–',
-            theme: theme,
-            accentColor: theme.colorScheme.secondary,
-          )),
+          Expanded(
+            child: _buildMetricCard(
+              icon: Icons.repeat,
+              label: 'Reps',
+              value: displayReps > 0 ? '$displayReps' : '–',
+              theme: theme,
+              accentColor: theme.colorScheme.secondary,
+            ),
+          ),
           const SizedBox(width: 10),
-          Expanded(child: _buildMetricCard(
-            icon: Icons.hourglass_bottom,
-            label: 'Rest',
-            value: restDisplay,
-            theme: theme,
-            isActive: restActive,
-            accentColor: restActive ? theme.colorScheme.primary : null,
-          )),
+          Expanded(
+            child: _buildMetricCard(
+              icon: Icons.hourglass_bottom,
+              label: 'Rest',
+              value: restDisplay,
+              theme: theme,
+              isActive: restActive,
+              accentColor: restActive ? theme.colorScheme.primary : null,
+            ),
+          ),
           const SizedBox(width: 10),
-          Expanded(child: _buildMetricCard(
-            icon: inputWeight > 0 ? Icons.fitness_center : Icons.check_circle_outline,
-            label: inputWeight > 0 ? '${inputWeight.toStringAsFixed(inputWeight == inputWeight.toInt() ? 0 : 1)} kg' : 'Sets',
-            value: '$setsDone',
-            theme: theme,
-            accentColor: theme.colorScheme.secondary,
-          )),
+          Expanded(
+            child: _buildMetricCard(
+              icon: inputWeight > 0
+                  ? Icons.fitness_center
+                  : Icons.check_circle_outline,
+              label: inputWeight > 0
+                  ? '${inputWeight.toStringAsFixed(inputWeight == inputWeight.toInt() ? 0 : 1)} kg'
+                  : 'Sets',
+              value: '$setsDone',
+              theme: theme,
+              accentColor: theme.colorScheme.secondary,
+            ),
+          ),
         ],
       ),
     );
@@ -928,7 +1289,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             : theme.colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? color.withValues(alpha: 0.3) : theme.colorScheme.outline.withValues(alpha: 0.2),
+          color: isActive
+              ? color.withValues(alpha: 0.3)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -974,7 +1337,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               child: Row(
                 children: [
@@ -986,11 +1351,19 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         provider.setDraftWeight(widget.exerciseId!, val);
                         setState(() {});
                       },
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'kg',
-                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
@@ -999,7 +1372,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: Text('Kilograms', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                    child: Text(
+                      'Kilograms',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1013,7 +1392,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               child: Row(
                 children: [
@@ -1026,10 +1407,16 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         setState(() {});
                       },
                       keyboardType: TextInputType.number,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         hintText: '0',
-                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
@@ -1038,7 +1425,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: Text('Repeats', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                    child: Text(
+                      'Repeats',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1078,15 +1471,22 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             children: [
               // Timer display
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
                   color: isTimerActive
-                      ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.secondary.withValues(alpha: 0.1)
                       : Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isTimerActive
-                        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4)
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.secondary.withValues(alpha: 0.4)
                         : Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
@@ -1095,7 +1495,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   children: [
                     Icon(
                       Icons.timer,
-                      color: isTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: isTimerActive
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -1104,7 +1506,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: isTimerActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.onSurface,
+                        color: isTimerActive
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.onSurface,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -1122,8 +1526,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: !_useManualDuration
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
-                              : Theme.of(context).colorScheme.surfaceContainerHigh,
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.15)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHigh,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(10),
                             bottomLeft: Radius.circular(10),
@@ -1137,9 +1545,28 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.timer, size: 18, color: !_useManualDuration ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+                            Icon(
+                              Icons.timer,
+                              size: 18,
+                              color: !_useManualDuration
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                            ),
                             const SizedBox(width: 6),
-                            Text('Timer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: !_useManualDuration ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
+                            Text(
+                              'Timer',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: !_useManualDuration
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1152,8 +1579,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: _useManualDuration
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
-                              : Theme.of(context).colorScheme.surfaceContainerHigh,
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.15)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHigh,
                           borderRadius: const BorderRadius.only(
                             topRight: Radius.circular(10),
                             bottomRight: Radius.circular(10),
@@ -1167,9 +1598,28 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.edit, size: 18, color: _useManualDuration ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+                            Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: _useManualDuration
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                            ),
                             const SizedBox(width: 6),
-                            Text('Manual', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _useManualDuration ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
+                            Text(
+                              'Manual',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _useManualDuration
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1187,9 +1637,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       child: Container(
                         height: 52,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -1198,10 +1652,20 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                               child: TextField(
                                 controller: _manualDurationController,
                                 keyboardType: TextInputType.number,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: '0',
-                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   contentPadding: EdgeInsets.zero,
@@ -1210,7 +1674,15 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                             ),
                             Padding(
                               padding: const EdgeInsets.only(right: 12),
-                              child: Text('Minutes', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                              child: Text(
+                                'Minutes',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1226,65 +1698,202 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                           color: Theme.of(context).colorScheme.secondary,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.add, color: Colors.black, size: 28),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.black,
+                          size: 28,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ] else ...[
-              // Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: Icon(isTimerActive ? Icons.stop : Icons.play_arrow),
-                      onPressed: () {
-                        if (isTimerActive) {
-                          provider.stopCardioTimer(exerciseId);
-                        } else {
-                          provider.startCardioTimer(exerciseId);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isTimerActive
-                            ? const Color(0xFFFF6B6B)
-                            : Theme.of(context).colorScheme.secondary,
-                        foregroundColor: isTimerActive ? Colors.white : Colors.black,
-                        minimumSize: const Size(0, 52),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      label: Text(
-                        isTimerActive ? 'Stop' : 'Start',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save),
-                      onPressed: currentElapsed > 0 ? () => _addSet(provider) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Theme.of(context).colorScheme.outline,
-                        minimumSize: const Size(0, 52),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      label: Text(
-                        'Save (${currentElapsed ~/ 60} min)',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          isTimerActive ? Icons.stop : Icons.play_arrow,
+                        ),
+                        onPressed: () {
+                          if (isTimerActive) {
+                            provider.stopCardioTimer(exerciseId);
+                          } else {
+                            provider.startCardioTimer(exerciseId);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isTimerActive
+                              ? const Color(0xFFFF6B6B)
+                              : Theme.of(context).colorScheme.secondary,
+                          foregroundColor: isTimerActive
+                              ? Colors.white
+                              : Colors.black,
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        label: Text(
+                          isTimerActive ? 'Stop' : 'Start',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.save),
+                        onPressed: currentElapsed > 0
+                            ? () => _addSet(provider)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.outline,
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        label: Text(
+                          'Save (${currentElapsed ~/ 60} min)',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ],
           ),
         );
       },
     );
+  }
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _canEditCurrentSessionSets(WorkoutProvider provider) {
+    final activeWorkout = provider.activeWorkout;
+    if (widget.exerciseId == null ||
+        !provider.isWorkoutActive ||
+        activeWorkout == null) {
+      return false;
+    }
+    return _isSameDate(activeWorkout.startTime, DateTime.now());
+  }
+
+  Future<void> _editCurrentSessionSet({
+    required WorkoutProvider provider,
+    required ExerciseSet set,
+  }) async {
+    if (!_canEditCurrentSessionSets(provider) ||
+        widget.exerciseId == null ||
+        set.id == null) {
+      return;
+    }
+
+    final weightController = TextEditingController(
+      text: set.weight > 0 ? set.weight.toString() : '',
+    );
+    final repsController = TextEditingController(text: set.reps.toString());
+    final theme = Theme.of(context);
+
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: theme.colorScheme.outline),
+          ),
+          title: Text(
+            'Edit Set #${set.setNumber}',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_isCardio) ...[
+                TextField(
+                  controller: weightController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: _isCardio ? 'Minutes' : 'Reps',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final reps = int.tryParse(repsController.text.trim()) ?? 0;
+                final weight = _isCardio
+                    ? 0.0
+                    : (double.tryParse(weightController.text.trim()) ?? 0.0);
+
+                if (reps <= 0) {
+                  return;
+                }
+
+                await provider.updateSet(
+                  widget.exerciseId!,
+                  set.id!,
+                  weight,
+                  reps,
+                );
+                if (!mounted || !ctx.mounted) return;
+                Navigator.pop(ctx);
+              },
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      weightController.dispose();
+      repsController.dispose();
+    }
   }
 
   Widget _buildHistorySection() {
@@ -1299,7 +1908,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
         currentSets = matches.first.sets.where((s) => s.completed).toList();
       }
     }
-    bool hasCurrentSets = currentSets.isNotEmpty;
+    final hasCurrentSets = currentSets.isNotEmpty;
+    final canEditCurrentSets = _canEditCurrentSessionSets(provider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1326,7 +1936,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: CircularProgressIndicator(color: theme.colorScheme.secondary, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.secondary,
+                  strokeWidth: 2,
+                ),
               ),
             )
           else if (!hasCurrentSets && _history.isEmpty)
@@ -1336,37 +1949,64 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.timeline, size: 36, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                  Icon(
+                    Icons.timeline,
+                    size: 36,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.3,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'No history yet',
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 13),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
             )
           else ...[
             if (hasCurrentSets)
-              _buildCurrentSessionCard(currentSets, theme),
-            ..._history.map((session) => _buildHistorySessionCard(session, theme)),
+              _buildCurrentSessionCard(
+                currentSets,
+                theme,
+                provider,
+                canEditCurrentSets,
+              ),
+            ..._history.map(
+              (session) => _buildHistorySessionCard(session, theme),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildCurrentSessionCard(List<ExerciseSet> sets, ThemeData theme) {
+  Widget _buildCurrentSessionCard(
+    List<ExerciseSet> sets,
+    ThemeData theme,
+    WorkoutProvider provider,
+    bool canEditCurrentSets,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.secondary.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: theme.colorScheme.secondary.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1380,8 +2020,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '● LIVE',
-                  style: TextStyle(color: theme.colorScheme.secondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                  'LIVE',
+                  style: TextStyle(
+                    color: theme.colorScheme.secondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1393,31 +2038,60 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   color: theme.colorScheme.secondary,
                 ),
               ),
+              if (canEditCurrentSets) ...[
+                const SizedBox(width: 8),
+                Text(
+                  'Tap set to edit',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 10),
-          ...sets.asMap().entries.map((entry) {
-            final s = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 28,
-                    child: Text(
-                      '#${s.setNumber}',
-                      style: TextStyle(color: theme.colorScheme.secondary, fontSize: 13, fontWeight: FontWeight.w600),
+          ...sets.map((s) {
+            final setDescription = _isCardio
+                ? '${s.reps} min'
+                : '${s.weight > 0 ? '${s.weight.toStringAsFixed(s.weight == s.weight.toInt() ? 0 : 1)} kg' : 'BW'} x ${s.reps} reps';
+            return InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: canEditCurrentSets
+                  ? () => _editCurrentSessionSet(provider: provider, set: s)
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '#${s.setNumber}',
+                        style: TextStyle(
+                          color: theme.colorScheme.secondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      _isCardio
-                          ? '${s.reps} min'
-                          : '${s.weight > 0 ? "${s.weight.toStringAsFixed(s.weight == s.weight.toInt() ? 0 : 1)} kg" : "BW"} × ${s.reps} reps',
-                      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13),
+                    Expanded(
+                      child: Text(
+                        setDescription,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    if (canEditCurrentSets)
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
               ),
             );
           }),
@@ -1425,15 +2099,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       ),
     );
   }
-
-  Widget _buildHistorySessionCard(Map<String, dynamic> session, ThemeData theme) {
+  Widget _buildHistorySessionCard(
+    Map<String, dynamic> session,
+    ThemeData theme,
+  ) {
     final startTimeStr = session['start_time'] as String;
     final date = DateTime.tryParse(startTimeStr) ?? DateTime.now();
     final sets = session['sets'] as List;
 
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final dayName = dayNames[date.weekday - 1];
-    final dateStr = '$dayName, ${date.day}/${date.month}/${date.year.toString().substring(2)}';
+    final dateStr =
+        '$dayName, ${date.day}/${date.month}/${date.year.toString().substring(2)}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1441,14 +2118,20 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 13, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.calendar_today,
+                size: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
                 dateStr,
@@ -1476,7 +2159,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     width: 28,
                     child: Text(
                       '#$setNum',
-                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -1484,7 +2170,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                       _isCardio
                           ? '$reps min'
                           : '${weight > 0 ? "${weight.toStringAsFixed(weight == weight.toInt() ? 0 : 1)} kg" : "BW"} × $reps reps',
-                      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -1495,5 +2184,6 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
       ),
     );
   }
-
 }
+
+

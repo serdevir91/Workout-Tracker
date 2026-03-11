@@ -1,10 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/workout_provider.dart';
-import '../providers/settings_provider.dart';
 import '../l10n/translations.dart';
+import '../providers/settings_provider.dart';
+import '../providers/workout_provider.dart';
 import '../utils/formatters.dart';
 import 'settings_screen.dart';
+
+enum _StatsRange { week, month, all }
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -14,10 +17,10 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  Map<String, num>? _stats;
-  List<Map<String, dynamic>> _sessionStats = [];
   bool _isLoading = true;
   int _lastKnownWorkoutCount = -1;
+  _StatsRange _selectedRange = _StatsRange.month;
+  List<Map<String, dynamic>> _sessions = [];
 
   @override
   void initState() {
@@ -28,33 +31,162 @@ class _StatsScreenState extends State<StatsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Auto-refresh stats when workout list changes (reactive updates)
     final provider = context.watch<WorkoutProvider>();
-    final currentCount = provider.workouts.length;
-    if (_lastKnownWorkoutCount != -1 && currentCount != _lastKnownWorkoutCount) {
+    final count = provider.workouts.length;
+    if (_lastKnownWorkoutCount != -1 && _lastKnownWorkoutCount != count) {
       _loadStats();
     }
-    _lastKnownWorkoutCount = currentCount;
+    _lastKnownWorkoutCount = count;
   }
 
   Future<void> _loadStats() async {
-    final provider = context.read<WorkoutProvider>();
     try {
-      final stats = await provider.getStats();
-      final sessionStats = await provider.getWorkoutSessionStats();
+      final provider = context.read<WorkoutProvider>();
+      final sessions = await provider.getWorkoutSessionStats();
       if (!mounted) return;
       setState(() {
-        _stats = stats;
-        _sessionStats = sessionStats;
+        _sessions = sessions;
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint("Error loading stats: $e");
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      debugPrint('Error loading stats: $e');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  DateTime _date(Map<String, dynamic> s) =>
+      DateTime.tryParse(s['start_time'] as String? ?? '') ??
+      DateTime.fromMillisecondsSinceEpoch(0);
+  int _i(dynamic v) => v is num ? v.toInt() : 0;
+  double _d(dynamic v) => v is num ? v.toDouble() : 0;
+
+  DateTime? _rangeStart() {
+    final now = DateTime.now();
+    switch (_selectedRange) {
+      case _StatsRange.week:
+        return now.subtract(const Duration(days: 7));
+      case _StatsRange.month:
+        return now.subtract(const Duration(days: 30));
+      case _StatsRange.all:
+        return null;
+    }
+  }
+
+  List<Map<String, dynamic>> _filtered() {
+    final start = _rangeStart();
+    if (start == null) return List<Map<String, dynamic>>.from(_sessions);
+    return _sessions.where((s) => !_date(s).isBefore(start)).toList();
+  }
+
+  Map<String, dynamic> _summary(List<Map<String, dynamic>> data) {
+    final totalWorkouts = data.length;
+    final totalDuration = data.fold<int>(
+      0,
+      (a, s) => a + _i(s['total_duration']),
+    );
+    final totalVolume = data.fold<double>(
+      0,
+      (a, s) => a + _d(s['total_volume']),
+    );
+    final totalSets = data.fold<int>(0, (a, s) => a + _i(s['total_sets']));
+    final totalReps = data.fold<int>(0, (a, s) => a + _i(s['total_reps']));
+    final totalCalories = data.fold<double>(0, (a, s) => a + _d(s['calories']));
+    final avgCompletion = totalWorkouts == 0
+        ? 0
+        : data.fold<double>(0, (a, s) => a + _d(s['completion_percentage'])) /
+              totalWorkouts;
+
+    final avgDuration = totalWorkouts == 0
+        ? 0
+        : (totalDuration / totalWorkouts).round();
+    final avgSets = totalWorkouts == 0 ? 0 : totalSets / totalWorkouts;
+    final avgRepsPerSet = totalSets == 0 ? 0 : totalReps / totalSets;
+    final avgVolume = totalWorkouts == 0 ? 0 : totalVolume / totalWorkouts;
+
+    final uniqueDays = <String>{};
+    for (final s in data) {
+      final d = _date(s);
+      uniqueDays.add('${d.year}-${d.month}-${d.day}');
+    }
+    final activeDays = uniqueDays.length;
+
+    final byVolume = data.isEmpty
+        ? null
+        : data.reduce(
+            (a, b) => _d(a['total_volume']) >= _d(b['total_volume']) ? a : b,
+          );
+    final longest = data.isEmpty
+        ? null
+        : data.reduce(
+            (a, b) =>
+                _i(a['total_duration']) >= _i(b['total_duration']) ? a : b,
+          );
+
+    final start =
+        _rangeStart() ?? (data.isEmpty ? DateTime.now() : _date(data.last));
+    final daysSpan = math.max(
+      1,
+      DateTime.now()
+              .difference(DateTime(start.year, start.month, start.day))
+              .inDays +
+          1,
+    );
+    final workoutsPerWeek = totalWorkouts / (daysSpan / 7);
+
+    return {
+      'totalWorkouts': totalWorkouts,
+      'totalDuration': totalDuration,
+      'totalVolume': totalVolume,
+      'totalSets': totalSets,
+      'totalReps': totalReps,
+      'totalCalories': totalCalories,
+      'avgCompletion': avgCompletion,
+      'avgDuration': avgDuration,
+      'avgSets': avgSets,
+      'avgRepsPerSet': avgRepsPerSet,
+      'avgVolume': avgVolume,
+      'activeDays': activeDays,
+      'workoutsPerWeek': workoutsPerWeek,
+      'bestName': byVolume?['name'] ?? '-',
+      'bestVolume': byVolume == null ? 0.0 : _d(byVolume['total_volume']),
+      'longestName': longest?['name'] ?? '-',
+      'longestDuration': longest == null ? 0 : _i(longest['total_duration']),
+    };
+  }
+
+  List<MapEntry<String, Map<String, num>>> _topExercises(
+    List<Map<String, dynamic>> data,
+  ) {
+    final map = <String, Map<String, num>>{};
+    for (final s in data) {
+      final exs = s['exercises'] as List<dynamic>? ?? const [];
+      for (final raw in exs) {
+        final ex = raw as Map<String, dynamic>;
+        final name = (ex['name'] as String?)?.trim();
+        if (name == null || name.isEmpty) continue;
+        final agg = map.putIfAbsent(
+          name,
+          () => {'sets': 0, 'reps': 0, 'vol': 0},
+        );
+        agg['sets'] = (agg['sets'] ?? 0) + _i(ex['sets']);
+        agg['reps'] = (agg['reps'] ?? 0) + _i(ex['reps']);
+        agg['vol'] = (agg['vol'] ?? 0) + _d(ex['total_volume']);
       }
+    }
+    final list = map.entries.toList()
+      ..sort((a, b) => (b.value['vol'] ?? 0).compareTo(a.value['vol'] ?? 0));
+    return list;
+  }
+
+  String _rangeLabel(Translations t, _StatsRange r) {
+    switch (r) {
+      case _StatsRange.week:
+        return t.get('week');
+      case _StatsRange.month:
+        return t.get('month');
+      case _StatsRange.all:
+        return t.get('all_time');
     }
   }
 
@@ -62,227 +194,500 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary)),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.secondary,
+          ),
+        ),
       );
     }
 
-    final totalWorkouts = _stats?['totalWorkouts']?.toInt() ?? 0;
-    final totalDuration = _stats?['totalDuration']?.toInt() ?? 0;
-    final totalVolume = _stats?['totalVolume']?.toDouble() ?? 0.0;
-    final totalSets = _stats?['totalSets']?.toInt() ?? 0;
-
-    // Compute averages for detail cards
-    final avgVolume = totalWorkouts > 0 ? totalVolume / totalWorkouts : 0.0;
-    final avgDuration = totalWorkouts > 0 ? totalDuration ~/ totalWorkouts : 0;
-    final avgSets = totalWorkouts > 0 ? (totalSets / totalWorkouts).toStringAsFixed(1) : '0';
-
-    // Find best workout (highest volume)
-    String bestWorkoutInfo = '';
-    if (_sessionStats.isNotEmpty) {
-      final best = _sessionStats.reduce((a, b) =>
-          ((a['total_volume'] as num).toDouble()) >= ((b['total_volume'] as num).toDouble()) ? a : b);
-      bestWorkoutInfo = '${best['name']} — ${context.read<SettingsProvider>().formatWeight((best['total_volume'] as num).toDouble())}';
-    }
+    final t = Translations.of(context);
+    final settings = context.watch<SettingsProvider>();
+    final data = _filtered();
+    final s = _summary(data);
+    final top = _topExercises(data).take(6).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(Translations.of(context).get('stats')),
+        title: Text(t.get('stats')),
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Dashboard Grid
-          Text(
-            'Overview',
-            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Column(
-            children: [
-              _buildExpandableStatCard(Translations.of(context).get('total_workouts'), '$totalWorkouts', Icons.fitness_center, Theme.of(context).colorScheme.primary,
-                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_volume_per_workout')}: ${context.read<SettingsProvider>().formatWeight(avgVolume)}\n${Translations.of(context).get('avg_sets_per_workout')}: $avgSets' : ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_volume'), context.read<SettingsProvider>().formatWeight(totalVolume), Icons.monitor_weight_outlined, Theme.of(context).colorScheme.secondary,
-                  bestWorkoutInfo.isNotEmpty ? '${Translations.of(context).get('best_workout')}: $bestWorkoutInfo' : ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_duration'), formatDuration(totalDuration), Icons.timer_outlined, const Color(0xFFFF6B6B),
-                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_duration_per_workout')}: ${formatDuration(avgDuration)}' : ''),
-              _buildExpandableStatCard(Translations.of(context).get('total_sets'), '$totalSets', Icons.repeat, const Color(0xFFFFAE42),
-                  totalWorkouts > 0 ? '${Translations.of(context).get('avg_sets_per_workout')}: $avgSets per workout' : ''),
-            ],
-          ),
-          const SizedBox(height: 32),
-          
-          // Workout Sessions Breakdown
-          Text(
-            'Workout Sessions Breakdown',
-            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          if (_sessionStats.isEmpty)
-             Padding(
-               padding: const EdgeInsets.symmetric(vertical: 32),
-               child: Center(child: Text('No workout session data yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
-             )
-          else
-            ..._sessionStats.map((sess) => _buildSessionStatCard(sess)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandableStatCard(String title, String value, IconData icon, Color color, String details) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outline),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          collapsedIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          iconColor: Theme.of(context).colorScheme.onSurface,
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+            icon: Icon(
+              Icons.settings,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            child: Icon(icon, color: color, size: 20),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
-          title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadStats,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 72, right: 16, bottom: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            Text(
+              'Performance Dashboard',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              children: _StatsRange.values
+                  .map(
+                    (r) => ChoiceChip(
+                      label: Text(_rangeLabel(t, r)),
+                      selected: _selectedRange == r,
+                      showCheckmark: false,
+                      onSelected: (_) => setState(() => _selectedRange = r),
+                      selectedColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.16),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHigh,
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 14),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.35,
+              children: [
+                _tile(
+                  context,
+                  Icons.fitness_center,
+                  t.get('total_workouts'),
+                  '${s['totalWorkouts']}',
+                  '${s['activeDays']} active days',
+                ),
+                _tile(
+                  context,
+                  Icons.monitor_weight_outlined,
+                  t.get('total_volume'),
+                  settings.formatWeight(_d(s['totalVolume'])),
+                  '${settings.formatWeight(_d(s['avgVolume']))} / workout',
+                ),
+                _tile(
+                  context,
+                  Icons.timer_outlined,
+                  t.get('total_duration'),
+                  formatDuration(_i(s['totalDuration'])),
+                  '${formatDuration(_i(s['avgDuration']))} / workout',
+                ),
+                _tile(
+                  context,
+                  Icons.show_chart,
+                  'Consistency',
+                  '${(_d(s['workoutsPerWeek'])).toStringAsFixed(1)} / week',
+                  '${s['totalSets']} sets',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                    const SizedBox(height: 4),
-                    Text(details, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.4)),
+                    _chip(
+                      context,
+                      'Avg sets/workout',
+                      (_d(s['avgSets'])).toStringAsFixed(1),
+                    ),
+                    _chip(
+                      context,
+                      'Avg reps/set',
+                      (_d(s['avgRepsPerSet'])).toStringAsFixed(1),
+                    ),
+                    _chip(
+                      context,
+                      'Avg completion',
+                      '${_d(s['avgCompletion']).toStringAsFixed(0)}%',
+                    ),
+                    _chip(
+                      context,
+                      'Total calories',
+                      _d(s['totalCalories']).toStringAsFixed(0),
+                    ),
+                    _chip(context, 'Total reps', '${s['totalReps']}'),
+                    _chip(
+                      context,
+                      'Longest session',
+                      formatDuration(_i(s['longestDuration'])),
+                    ),
                   ],
                 ),
               ),
-            )
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Highlights',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Best volume session: ${s['bestName']} (${settings.formatWeight(_d(s['bestVolume']))})',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Longest session: ${s['longestName']} (${formatDuration(_i(s['longestDuration']))})',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Top Exercises',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline),
+              ),
+              child: top.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'No exercise detail available for this period.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : Column(
+                      children: List.generate(top.length, (i) {
+                        final e = top[i];
+                        return ListTile(
+                          dense: true,
+                          leading: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.18),
+                            child: Text(
+                              '${i + 1}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            e.key,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${e.value['sets']} sets | ${e.value['reps']} reps',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          trailing: Text(
+                            settings.formatWeight(_d(e.value['vol'])),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Workout Sessions (${data.length})',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (data.isEmpty)
+              Card(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'No workout sessions in this period.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...data.map((sess) => _sessionCard(context, settings, sess)),
           ],
         ),
       ),
     );
   }
 
-
-  Widget _buildMiniStat(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      ],
-    );
-  }
-
-  Widget _buildSessionStatCard(Map<String, dynamic> sess) {
-    final name = sess['name'] as String;
-    final date = DateTime.parse(sess['start_time'] as String);
-    final totalExercises = sess['total_exercises'] as int;
-    final totalSets = sess['total_sets'] as int;
-    final totalVolume = (sess['total_volume'] as num).toDouble();
-    final totalReps = sess['total_reps'] as int;
-    final duration = sess['total_duration'] as int;
-
+  Widget _tile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String value,
+    String subtitle,
+  ) {
     return Card(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Theme.of(context).colorScheme.outline),
       ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          collapsedIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          iconColor: Theme.of(context).colorScheme.onSurface,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis, maxLines: 1),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text('${totalVolume.toStringAsFixed(0)} kg', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 8),
-                  Text('•', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                  const SizedBox(width: 8),
-                  Text(formatDuration(duration), style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                ],
-              ),
-            ],
-          ),
-          subtitle: Text('${date.day}/${date.month}/${date.year}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                   _buildMiniStat('Exercises', '$totalExercises', const Color(0xFFFF6B6B)),
-                   _buildMiniStat('Sets', '$totalSets', Theme.of(context).colorScheme.primary),
-                   _buildMiniStat('Reps', '$totalReps', const Color(0xFFFFAE42)),
-                ],
+            Icon(
+              icon,
+              size: 18,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+            const Spacer(),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            if (sess['exercises'] != null && (sess['exercises'] as List).isNotEmpty) ...[
-            Divider(color: Theme.of(context).colorScheme.outline, height: 1),
-              ...((sess['exercises'] as List).map((ex) {
-                final exName = ex['name'] as String;
-                final exSets = ex['sets'] as int;
-                final exReps = ex['reps'] as int;
-                final maxWeight = (ex['max_weight'] as num?)?.toDouble() ?? 0.0;
-                final exDuration = (ex['duration'] as int?) ?? 0;
-                final durationStr = '${(exDuration ~/ 60).toString().padLeft(2, '0')}:${(exDuration % 60).toString().padLeft(2, '0')}';
-                final isCardioEx = ActiveExercise.detectCardio(exName) || (maxWeight == 0 && exReps > 0 && exSets <= 2);
-                
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(exName, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            if (isCardioEx)
-                              Text('$exSets Sets  •  $exReps min  •  $durationStr', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12))
-                            else
-                              Text('$exSets Sets  •  $exReps Reps  •  $durationStr', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: isCardioEx
-                          ? Text('$exReps min', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.right)
-                          : Text('${maxWeight.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '')} kg', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.right),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList()),
-              const SizedBox(height: 8),
-            ],
+            const SizedBox(height: 2),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _chip(BuildContext context, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sessionCard(
+    BuildContext context,
+    SettingsProvider settings,
+    Map<String, dynamic> sess,
+  ) {
+    final date = _date(sess);
+    final exs = sess['exercises'] as List<dynamic>? ?? const [];
+    return Card(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline),
+      ),
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ExpansionTile(
+        title: Text(
+          sess['name'] as String? ?? '-',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          formatDateWithTime(date, locale: settings.intlLocale),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
+        ),
+        collapsedIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        iconColor: Theme.of(context).colorScheme.onSurface,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _chip(
+                  context,
+                  'Volume',
+                  settings.formatWeight(_d(sess['total_volume'])),
+                ),
+                _chip(
+                  context,
+                  'Duration',
+                  formatDuration(_i(sess['total_duration'])),
+                ),
+                _chip(context, 'Sets', '${_i(sess['total_sets'])}'),
+                _chip(context, 'Reps', '${_i(sess['total_reps'])}'),
+                _chip(
+                  context,
+                  'Calories',
+                  _d(sess['calories']).toStringAsFixed(0),
+                ),
+                _chip(
+                  context,
+                  'Completion',
+                  '${_d(sess['completion_percentage']).toStringAsFixed(0)}%',
+                ),
+              ],
+            ),
+          ),
+          if (exs.isNotEmpty)
+            Divider(height: 1, color: Theme.of(context).colorScheme.outline),
+          ...exs.map((raw) {
+            final ex = raw as Map<String, dynamic>;
+            final name = ex['name'] as String? ?? '-';
+            final sets = _i(ex['sets']);
+            final reps = _i(ex['reps']);
+            final maxWeight = _d(ex['max_weight']);
+            final duration = _i(ex['duration']);
+            final isCardio =
+                ActiveExercise.detectCardio(name) ||
+                (maxWeight == 0 && reps > 0 && sets <= 2);
+            return ListTile(
+              dense: true,
+              title: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                isCardio
+                    ? '$sets sets | $reps min | ${formatDuration(duration)}'
+                    : '$sets sets | $reps reps | ${formatDuration(duration)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: Text(
+                isCardio ? '$reps min' : settings.formatWeight(maxWeight),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

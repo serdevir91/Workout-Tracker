@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../db/database_helper.dart';
 
 /// Color palette preset definitions.
@@ -112,6 +113,10 @@ class UnitConverter {
 }
 
 class SettingsProvider with ChangeNotifier {
+  SettingsProvider() {
+    _applyIntlLocale();
+  }
+
   ThemeMode _themeMode = ThemeMode.system;
   String _language = 'en';
   String _measurementSystem = 'metric'; // 'metric' or 'imperial'
@@ -152,8 +157,10 @@ class SettingsProvider with ChangeNotifier {
 
   /// Weight unit string for display.
   String get unit => isMetric ? 'kg' : 'lbs';
+
   /// Length unit string for display.
   String get lengthUnit => isMetric ? 'cm' : 'in';
+
   /// Backward compat.
   bool get isKg => isMetric;
 
@@ -179,7 +186,33 @@ class SettingsProvider with ChangeNotifier {
   int get firstDayOfWeek => _firstDayOfWeek;
 
   /// Get day name for a day number (1-7, ISO weekday).
-  static const List<String> dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const List<String> dayNames = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+  static String languageToIntlLocale(String language) {
+    switch (language) {
+      case 'tr':
+        return 'tr_TR';
+      case 'es':
+        return 'es_ES';
+      case 'en':
+      default:
+        return 'en_US';
+    }
+  }
+
+  String get intlLocale => languageToIntlLocale(_language);
+
+  void _applyIntlLocale() {
+    Intl.defaultLocale = intlLocale;
+  }
+
   String getDayName(int dayNumber) {
     if (dayNumber < 1 || dayNumber > 7) return '';
     return dayNames[dayNumber - 1];
@@ -237,6 +270,7 @@ class SettingsProvider with ChangeNotifier {
         }
 
         _language = settings['language'] as String? ?? 'en';
+        _applyIntlLocale();
 
         // Support legacy 'unit' field migration
         final unitField = settings['unit'] as String? ?? 'kg';
@@ -253,21 +287,30 @@ class SettingsProvider with ChangeNotifier {
 
         // Body measurements
         _armCircumference = (settings['arm_circumference'] as num?)?.toDouble();
-        _waistCircumference = (settings['waist_circumference'] as num?)?.toDouble();
+        _waistCircumference = (settings['waist_circumference'] as num?)
+            ?.toDouble();
         _shoulderWidth = (settings['shoulder_width'] as num?)?.toDouble();
-        _chestCircumference = (settings['chest_circumference'] as num?)?.toDouble();
+        _chestCircumference = (settings['chest_circumference'] as num?)
+            ?.toDouble();
         _hipCircumference = (settings['hip_circumference'] as num?)?.toDouble();
-        _thighCircumference = (settings['thigh_circumference'] as num?)?.toDouble();
-        _calfCircumference = (settings['calf_circumference'] as num?)?.toDouble();
-        _neckCircumference = (settings['neck_circumference'] as num?)?.toDouble();
-        _forearmCircumference = (settings['forearm_circumference'] as num?)?.toDouble();
+        _thighCircumference = (settings['thigh_circumference'] as num?)
+            ?.toDouble();
+        _calfCircumference = (settings['calf_circumference'] as num?)
+            ?.toDouble();
+        _neckCircumference = (settings['neck_circumference'] as num?)
+            ?.toDouble();
+        _forearmCircumference = (settings['forearm_circumference'] as num?)
+            ?.toDouble();
 
         _showOnDashboard = (settings['show_on_dashboard'] as int?) != 0;
         _displayAllData = (settings['display_all_data'] as int?) != 0;
         _autoPositioning = (settings['auto_positioning'] as int?) == 1;
 
         final wdStr = settings['workout_days'] as String? ?? '1,2,3,4,5,6,7';
-        _workoutDays = wdStr.split(',').map((e) => int.tryParse(e) ?? 1).toList();
+        _workoutDays = wdStr
+            .split(',')
+            .map((e) => int.tryParse(e) ?? 1)
+            .toList();
 
         _colorPaletteId = settings['color_palette'] as String? ?? 'default';
         _backgroundMode = settings['background_mode'] as String? ?? 'default';
@@ -294,6 +337,7 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> updateLanguage(String lang) async {
     _language = lang;
+    _applyIntlLocale();
     notifyListeners();
     await _saveToDb({'language': lang});
   }
@@ -302,10 +346,7 @@ class SettingsProvider with ChangeNotifier {
     _measurementSystem = system;
     final legacyUnit = system == 'imperial' ? 'lbs' : 'kg';
     notifyListeners();
-    await _saveToDb({
-      'measurement_system': system,
-      'unit': legacyUnit,
-    });
+    await _saveToDb({'measurement_system': system, 'unit': legacyUnit});
   }
 
   /// Legacy method — kept for backward compat.
