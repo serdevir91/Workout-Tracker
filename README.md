@@ -1,7 +1,7 @@
-<div align="center">
+﻿<div align="center">
   <img src="assets/images/app_icon.png" alt="Workout Tracker Logo" width="120"/>
   <h1>Modern Workout Tracker</h1>
-  <p>A sleek fitness tracking application built with Flutter — supports Light, Dark &amp; Pure Black (AMOLED) themes.</p>
+  <p>A sleek fitness tracking application built with Flutter â€” supports Light, Dark &amp; Pure Black (AMOLED) themes.</p>
   <p>
     <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.41-blue?logo=flutter" />
     <img alt="Dart" src="https://img.shields.io/badge/Dart-3.11-blue?logo=dart" />
@@ -10,7 +10,7 @@
   </p>
 </div>
 
-## ✨ Features
+## âœ¨ Features
 
 - **Light / Dark / Pure Black Themes:** Full theme support with 6 color palettes (Default, Ocean, Sunset, Forest, Rose, Crimson) and AMOLED-friendly pure black mode.
 - **Exercise Library:** 873 exercises categorized by muscle groups with auto-cycling image demonstrations (public domain, [free-exercise-db](https://github.com/yuhonas/free-exercise-db)).
@@ -25,18 +25,18 @@
 - **Calories Chart:** Track calories burned over time with line chart visualization.
 - **Stats Dashboard:** Overview cards for total workouts, volume, duration, and sets with session-level breakdown.
 - **Settings & Profile:** Configure theme, color palette, background mode, language, weight unit (kg/lbs), height, and body measurements.
-- **Multi-Language Support:** English, Turkish (Türkçe), and Spanish (Español) localization built-in.
-- **First Day of Week Setting:** Choose Monday, Saturday, or Sunday as your week start — workout plans sort accordingly.
+- **Multi-Language Support:** English, Turkish (TÃ¼rkÃ§e), and Spanish (EspaÃ±ol) localization built-in.
+- **First Day of Week Setting:** Choose Monday, Saturday, or Sunday as your week start â€” workout plans sort accordingly.
 - **Add Exercise from Library:** Long-press or tap "Add to Workout" from any exercise detail to add it to a workout plan.
 - **Redesigned Exercise Detail Screen:** Hero images with SliverAppBar, auto-cycling GIF-like animation, card-based metrics, modern history cards.
 - **Backup & Restore:** Export/import your workout data for safe keeping.
 - **Cross-Platform:** Runs seamlessly on Android and Windows Desktop.
 
-## 📱 Screenshots
+## ðŸ“± Screenshots
 
 <p align="center">
   <img src="assets/screenshots/1.jpeg" width="30%" />
-  <img src="assets/screenshots/2.jpeg" width="30%" />
+  <img src="assets/screenshots/2.jpeg?v=20260311-1940" width="30%" />
   <img src="assets/screenshots/3.jpeg" width="30%" />
 </p>
 <p align="center">
@@ -50,7 +50,7 @@
   <img src="assets/screenshots/9.jpeg" width="30%" />
 </p>
 
-## 🚀 Download & Install
+## ðŸš€ Download & Install
 
 You can easily install and test the app on your Android device!
 
@@ -67,7 +67,7 @@ Download and run the Windows build from the [Releases](https://github.com/serdev
 flutter build windows
 ```
 
-## 💻 Tech Stack
+## ðŸ’» Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -77,34 +77,34 @@ flutter build windows
 | **UI Components** | TableCalendar, Custom IndexedStack Navigation |
 | **Localization** | Custom translation system (EN / TR / ES) |
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
 lib/
-├── main.dart                  # App entry point
-├── db/                        # Database helper (SQLite)
-├── l10n/                      # Translations (EN, TR)
-├── models/                    # Data models (Workout, Plan, etc.)
-├── providers/                 # State management (Workout, Settings)
-├── screens/                   # All app screens
-│   ├── home_screen.dart
-│   ├── active_workout_screen.dart
-│   ├── exercise_library_screen.dart
-│   ├── exercise_info_screen.dart
-│   ├── plans_screen.dart
-│   ├── create_routine_screen.dart
-│   ├── stats_screen.dart
-│   ├── settings_screen.dart
-│   ├── workout_detail_screen.dart
-│   ├── workout_schedule_screen.dart
-│   ├── workout_summary_screen.dart
-│   └── swipeable_exercise_screen.dart
-├── services/                  # Notification service
-├── utils/                     # Utility functions
-└── widgets/                   # Reusable widgets
+â”œâ”€â”€ main.dart                  # App entry point
+â”œâ”€â”€ db/                        # Database helper (SQLite)
+â”œâ”€â”€ l10n/                      # Translations (EN, TR)
+â”œâ”€â”€ models/                    # Data models (Workout, Plan, etc.)
+â”œâ”€â”€ providers/                 # State management (Workout, Settings)
+â”œâ”€â”€ screens/                   # All app screens
+â”‚   â”œâ”€â”€ home_screen.dart
+â”‚   â”œâ”€â”€ active_workout_screen.dart
+â”‚   â”œâ”€â”€ exercise_library_screen.dart
+â”‚   â”œâ”€â”€ exercise_info_screen.dart
+â”‚   â”œâ”€â”€ plans_screen.dart
+â”‚   â”œâ”€â”€ create_routine_screen.dart
+â”‚   â”œâ”€â”€ stats_screen.dart
+â”‚   â”œâ”€â”€ settings_screen.dart
+â”‚   â”œâ”€â”€ workout_detail_screen.dart
+â”‚   â”œâ”€â”€ workout_schedule_screen.dart
+â”‚   â”œâ”€â”€ workout_summary_screen.dart
+â”‚   â””â”€â”€ swipeable_exercise_screen.dart
+â”œâ”€â”€ services/                  # Notification service
+â”œâ”€â”€ utils/                     # Utility functions
+â””â”€â”€ widgets/                   # Reusable widgets
 ```
 
-## 🛠️ Run Locally
+## ðŸ› ï¸ Run Locally
 
 ```bash
 # Clone the repository
@@ -126,45 +126,45 @@ flutter build apk --release
 flutter build windows
 ```
 
-## 📋 What's New (v3.1.5)
+## ðŸ“‹ What's New (v3.1.5)
 
-- **Cardio Issue Fixed** — Cardio exercises now handle timer/session flow more reliably during active workouts.
-- **Session Completion Reliability** — Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
-- **Stats & Summary Consistency** — Stats and workout summary calculations were aligned with the updated workout/session flow.
+- **Cardio Issue Fixed** â€” Cardio exercises now handle timer/session flow more reliably during active workouts.
+- **Session Completion Reliability** â€” Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
+- **Stats & Summary Consistency** â€” Stats and workout summary calculations were aligned with the updated workout/session flow.
 
 <details>
 <summary>v3.0.1 Changes</summary>
 
-- **Refined Muscle Group Categories** — Split broad groups into specific targets: Arms → Biceps + Triceps, Legs → Quadriceps + Hamstrings, Glutes & Hips → Glutes, added Lower Back as separate category, Traps moved to Shoulders
-- **Exercise Timer Fix** — Timer now correctly tracks the currently viewed exercise instead of always the last one; background time compensation also uses the active exercise
-- **All Exercises Properly Finished** — Workout completion now finishes all open exercises (not just the last one), fixing duration tracking for multi-exercise workouts
-- **Smart Muscle Group Matching** — Added 60+ custom exercise name overrides, fuzzy keyword matching with caching, and special bench press detection (close-grip → Triceps, others → Chest)
-- **Improved Donut Chart** — Muscle group distribution chart is now properly centered with centered legend layout
-- **Exercise Library Updates** — Category list updated to match new fine-grained muscle groups with distinct colors and icons
+- **Refined Muscle Group Categories** â€” Split broad groups into specific targets: Arms â†’ Biceps + Triceps, Legs â†’ Quadriceps + Hamstrings, Glutes & Hips â†’ Glutes, added Lower Back as separate category, Traps moved to Shoulders
+- **Exercise Timer Fix** â€” Timer now correctly tracks the currently viewed exercise instead of always the last one; background time compensation also uses the active exercise
+- **All Exercises Properly Finished** â€” Workout completion now finishes all open exercises (not just the last one), fixing duration tracking for multi-exercise workouts
+- **Smart Muscle Group Matching** â€” Added 60+ custom exercise name overrides, fuzzy keyword matching with caching, and special bench press detection (close-grip â†’ Triceps, others â†’ Chest)
+- **Improved Donut Chart** â€” Muscle group distribution chart is now properly centered with centered legend layout
+- **Exercise Library Updates** â€” Category list updated to match new fine-grained muscle groups with distinct colors and icons
 
 </details>
 
 <details>
 <summary>v3.0.0 Changes</summary>
 
-- **Free Exercise Database** — Replaced ExRx.net with [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (873 exercises, public domain / Unlicense)
-- **Auto-Cycling Exercise Images** — Exercise detail screen images now auto-cycle between start/end positions like a GIF animation (1.2s interval)
-- **Improved Image Quality** — High-resolution JPG images for all exercises, served from GitHub CDN
-- **Exercise Add Bug Fixed** — Adding exercises to workouts from the library now works correctly in all views
-- **Removed url_launcher Dependency** — Streamlined dependencies, no more external browser launches for exercises
-- **Cleaned Up Codebase** — Removed 24+ legacy Python scraping scripts and outdated data files
+- **Free Exercise Database** â€” Replaced ExRx.net with [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (873 exercises, public domain / Unlicense)
+- **Auto-Cycling Exercise Images** â€” Exercise detail screen images now auto-cycle between start/end positions like a GIF animation (1.2s interval)
+- **Improved Image Quality** â€” High-resolution JPG images for all exercises, served from GitHub CDN
+- **Exercise Add Bug Fixed** â€” Adding exercises to workouts from the library now works correctly in all views
+- **Removed url_launcher Dependency** â€” Streamlined dependencies, no more external browser launches for exercises
+- **Cleaned Up Codebase** â€” Removed 24+ legacy Python scraping scripts and outdated data files
 
 </details>
 
 <details>
 <summary>v2.2.1 Changes</summary>
 
-- **Redesigned Exercise Detail Screen** — Hero GIF with SliverAppBar, card-based metrics, modern history cards with LIVE badge
-- **First Day of Week Setting** — Choose Monday, Saturday, or Sunday; workout plans sort accordingly
-- **Add Exercise from Library** — Tap "Add to Workout" from exercise detail to add it to any workout plan
-- **Exercise Counter Repositioned** — Swipe indicator (1/8) now sits right below the sets counter badge
-- **Workout Plan Sorting** — Next training cards respect first day of week setting
-- **Alternative Exercise Swap** — Quick swap button in exercise detail AppBar
+- **Redesigned Exercise Detail Screen** â€” Hero GIF with SliverAppBar, card-based metrics, modern history cards with LIVE badge
+- **First Day of Week Setting** â€” Choose Monday, Saturday, or Sunday; workout plans sort accordingly
+- **Add Exercise from Library** â€” Tap "Add to Workout" from exercise detail to add it to any workout plan
+- **Exercise Counter Repositioned** â€” Swipe indicator (1/8) now sits right below the sets counter badge
+- **Workout Plan Sorting** â€” Next training cards respect first day of week setting
+- **Alternative Exercise Swap** â€” Quick swap button in exercise detail AppBar
 
 </details>
 
@@ -194,21 +194,21 @@ flutter build windows
 <details>
 <summary>v2.0.0 Changes</summary>
 
-- **Exercise library overhaul** — 526+ exercises with GIF demonstrations
-- **Workout Plans & Routines** — Create custom routines and assign to specific days
-- **Workout Schedule** — Calendar-based weekly schedule with configurable workout days
-- **Post-workout Summary** — Calories burned, total time, and total volume overview
-- **Stats Dashboard** — Total workouts, volume, duration, and sets with session breakdown
-- **Body Progress Charts** — Track weight, arm, waist, chest and more with line charts
-- **Multi-Language Support** — English and Turkish localization
-- **Settings & Profile** — Theme, language, weight unit (kg/lbs), height, body measurements
-- **Notification Service** — Rest timer and workout reminder notifications
-- **Improved data models** — Pydantic-style validation for workout data
+- **Exercise library overhaul** â€” 526+ exercises with GIF demonstrations
+- **Workout Plans & Routines** â€” Create custom routines and assign to specific days
+- **Workout Schedule** â€” Calendar-based weekly schedule with configurable workout days
+- **Post-workout Summary** â€” Calories burned, total time, and total volume overview
+- **Stats Dashboard** â€” Total workouts, volume, duration, and sets with session breakdown
+- **Body Progress Charts** â€” Track weight, arm, waist, chest and more with line charts
+- **Multi-Language Support** â€” English and Turkish localization
+- **Settings & Profile** â€” Theme, language, weight unit (kg/lbs), height, body measurements
+- **Notification Service** â€” Rest timer and workout reminder notifications
+- **Improved data models** â€” Pydantic-style validation for workout data
 
 </details>
 
 <details>
-<summary>v1.0.0 — Initial Release</summary>
+<summary>v1.0.0 â€” Initial Release</summary>
 
 - Core workout tracking with sets, reps, and weight logging
 - Exercise library with 526+ exercises and GIF demonstrations
@@ -221,4 +221,4 @@ flutter build windows
 </details>
 
 ---
-*Built with ❤️ for fitness enthusiasts.*
+*Built with â¤ï¸ for fitness enthusiasts.*
