@@ -1,5 +1,5 @@
 // Centralized translation system for the Workout Tracker app.
-// Supports: English (en), Türkçe (tr), Español (es)
+// Supports: English (en), Türkçe (tr), Español (es), Deutsch (de), Français (fr)
 //
 // Usage:
 //   final t = Translations.of(context);
@@ -59,7 +59,8 @@ class Translations {
       'backup_desc': 'Save your data to a file',
       'restore_database': 'Restore Database',
       'restore_desc': 'Load data from a backup file',
-      'restore_confirm': 'This will overwrite all current data with the backup. Are you sure?',
+      'restore_confirm':
+          'This will overwrite all current data with the backup. Are you sure?',
       'restore_title': 'Restore Backup',
       'cancel': 'Cancel',
       'save': 'Save',
@@ -74,6 +75,8 @@ class Translations {
       'english': 'English',
       'turkish': 'Türkçe',
       'spanish': 'Español',
+      'german': 'Deutsch',
+      'french': 'Français',
 
       // Body stats
       'body_measurements': 'Body Measurements',
@@ -88,7 +91,8 @@ class Translations {
       'forearm_circumference': 'Forearm',
       'body_progress': 'Body Progress',
       'update_measurements': 'Update Measurements',
-      'no_measurements_yet': 'No measurements recorded yet.\nTap the button to add your first measurement.',
+      'no_measurements_yet':
+          'No measurements recorded yet.\nTap the button to add your first measurement.',
       'measurement_saved': 'Measurements saved!',
       'select_measurement': 'Select Measurement',
 
@@ -127,7 +131,8 @@ class Translations {
       // Workout History
       'add_workout': 'Add Workout',
       'my_workout': 'My Workout',
-      'no_routines_created': 'No routines created yet. Create one to get started!',
+      'no_routines_created':
+          'No routines created yet. Create one to get started!',
       'all_past_workouts': 'All Past Workouts',
       'no_workouts_found': 'No workouts found',
       'delete': 'Delete',
@@ -150,7 +155,8 @@ class Translations {
       // Misc
       'no_data': 'No data',
       'exercises_label': 'exercises',
-      'storage_permission_required': 'Storage permission is required for backup. Please grant it in Settings.',
+      'storage_permission_required':
+          'Storage permission is required for backup. Please grant it in Settings.',
       'open_settings': 'Open Settings',
       'backup_saved': 'Backup saved successfully',
       'backup_failed': 'Backup failed',
@@ -236,7 +242,8 @@ class Translations {
       'backup_desc': 'Verilerinizi bir dosyaya kaydedin',
       'restore_database': 'Veritabanını Geri Yükle',
       'restore_desc': 'Yedek dosyasından verileri geri yükleyin',
-      'restore_confirm': 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?',
+      'restore_confirm':
+          'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?',
       'restore_title': 'Yedeği Geri Yükle',
       'cancel': 'İptal',
       'save': 'Kaydet',
@@ -251,6 +258,8 @@ class Translations {
       'english': 'English',
       'turkish': 'Türkçe',
       'spanish': 'Español',
+      'german': 'Deutsch',
+      'french': 'Français',
 
       // Body stats
       'body_measurements': 'Vücut Ölçüleri',
@@ -265,7 +274,8 @@ class Translations {
       'forearm_circumference': 'Ön Kol',
       'body_progress': 'Vücut İlerlemesi',
       'update_measurements': 'Ölçüleri Güncelle',
-      'no_measurements_yet': 'Henüz ölçüm kaydedilmedi.\nİlk ölçümünüzü eklemek için butona dokunun.',
+      'no_measurements_yet':
+          'Henüz ölçüm kaydedilmedi.\nİlk ölçümünüzü eklemek için butona dokunun.',
       'measurement_saved': 'Ölçümler kaydedildi!',
       'select_measurement': 'Ölçüm Seç',
 
@@ -304,7 +314,8 @@ class Translations {
       // Workout History
       'add_workout': 'Antrenman Ekle',
       'my_workout': 'Antrenmanlarım',
-      'no_routines_created': 'Henüz rutin oluşturulmadı. Başlamak için bir tane oluşturun!',
+      'no_routines_created':
+          'Henüz rutin oluşturulmadı. Başlamak için bir tane oluşturun!',
       'all_past_workouts': 'Tüm Geçmiş Antrenmanlar',
       'no_workouts_found': 'Antrenman bulunamadı',
       'delete': 'Sil',
@@ -327,7 +338,8 @@ class Translations {
       // Misc
       'no_data': 'Veri yok',
       'exercises_label': 'egzersiz',
-      'storage_permission_required': 'Yedekleme için depolama izni gereklidir. Lütfen Ayarlar\'dan izin verin.',
+      'storage_permission_required':
+          'Yedekleme için depolama izni gereklidir. Lütfen Ayarlar\'dan izin verin.',
       'open_settings': 'Ayarları Aç',
       'backup_saved': 'Yedek başarıyla kaydedildi',
       'backup_failed': 'Yedekleme başarısız oldu',
@@ -413,7 +425,8 @@ class Translations {
       'backup_desc': 'Guardar sus datos en un archivo',
       'restore_database': 'Restaurar Base de Datos',
       'restore_desc': 'Cargar datos desde un archivo de respaldo',
-      'restore_confirm': '¿Está seguro? Esto sobrescribirá todos los datos actuales con la copia de respaldo.',
+      'restore_confirm':
+          '¿Está seguro? Esto sobrescribirá todos los datos actuales con la copia de respaldo.',
       'restore_title': 'Restaurar Copia de Seguridad',
       'cancel': 'Cancelar',
       'save': 'Guardar',
@@ -428,6 +441,8 @@ class Translations {
       'english': 'English',
       'turkish': 'Türkçe',
       'spanish': 'Español',
+      'german': 'Deutsch',
+      'french': 'Français',
 
       // Body stats
       'body_measurements': 'Medidas Corporales',
@@ -442,7 +457,8 @@ class Translations {
       'forearm_circumference': 'Antebrazo',
       'body_progress': 'Progreso Corporal',
       'update_measurements': 'Actualizar Medidas',
-      'no_measurements_yet': 'Aún no hay mediciones registradas.\nToque el botón para agregar su primera medición.',
+      'no_measurements_yet':
+          'Aún no hay mediciones registradas.\nToque el botón para agregar su primera medición.',
       'measurement_saved': '¡Medidas guardadas correctamente!',
       'select_measurement': 'Seleccionar Medida',
 
@@ -459,7 +475,8 @@ class Translations {
       'week': 'Semana',
       'month': 'Mes',
       'all_time': 'Todo el Tiempo',
-      'no_routines': "No hay rutinas creadas. Toque 'Entrenamientos' para crear una.",
+      'no_routines':
+          "No hay rutinas creadas. Toque 'Entrenamientos' para crear una.",
       'workout_in_progress': 'Entrenamiento en curso',
       'scheduled_routines': 'Rutinas Programadas',
       'completed_workouts': 'Entrenamientos Completados',
@@ -481,7 +498,8 @@ class Translations {
       // Workout History
       'add_workout': 'Agregar Entrenamiento',
       'my_workout': 'Mi Entrenamiento',
-      'no_routines_created': '¡No hay rutinas creadas aún. Cree una para empezar!',
+      'no_routines_created':
+          '¡No hay rutinas creadas aún. Cree una para empezar!',
       'all_past_workouts': 'Entrenamientos Anteriores',
       'no_workouts_found': 'No se encontraron entrenamientos',
       'delete': 'Eliminar',
@@ -504,11 +522,13 @@ class Translations {
       // Misc
       'no_data': 'Sin datos',
       'exercises_label': 'ejercicios',
-      'storage_permission_required': 'Se requiere permiso de almacenamiento para realizar la copia de seguridad. Concédalo en Ajustes.',
+      'storage_permission_required':
+          'Se requiere permiso de almacenamiento para realizar la copia de seguridad. Concédalo en Ajustes.',
       'open_settings': 'Abrir Ajustes',
       'backup_saved': 'Copia de seguridad guardada correctamente',
       'backup_failed': 'Error al crear la copia de seguridad',
-      'restore_success': '¡Restauración exitosa! Los datos han sido recargados.',
+      'restore_success':
+          '¡Restauración exitosa! Los datos han sido recargados.',
       'restore_failed': 'Error al restaurar los datos',
       'file_not_found': 'El archivo seleccionado no fue encontrado.',
       'workout_details': 'Detalles del Entrenamiento',
@@ -563,6 +583,112 @@ class Translations {
       'avg_sets_per_workout': 'Series promedio por entrenamiento',
       'best_workout': 'Mejor entrenamiento',
       'day': 'Día',
+    },
+
+    // ═══════════════════════════════════════════════════
+    //  GERMAN (partial, fallback to EN for missing keys)
+    // ═══════════════════════════════════════════════════
+    'de': {
+      'home': 'Startseite',
+      'workouts': 'Trainings',
+      'library': 'Bibliothek',
+      'stats': 'Statistiken',
+      'settings': 'Einstellungen',
+      'profile': 'Profil',
+      'preferences': 'Präferenzen',
+      'theme': 'Design',
+      'language': 'Sprache',
+      'measurement_system': 'Maßeinheitensystem',
+      'metric': 'Metrisch',
+      'imperial': 'Imperial',
+      'english': 'English',
+      'turkish': 'Türkçe',
+      'spanish': 'Español',
+      'german': 'Deutsch',
+      'french': 'Français',
+      'save': 'Speichern',
+      'cancel': 'Abbrechen',
+      'delete': 'Löschen',
+      'finish': 'Beenden',
+      'next_training': 'Nächstes Training',
+      'weekly_overview': 'Wochenübersicht',
+      'rest_day': 'Ruhetag 😌',
+      'start_free_workout': 'Freies Training starten',
+      'total_workouts': 'Gesamtzahl Trainings',
+      'total_volume': 'Gesamtvolumen',
+      'total_sets': 'Gesamtsätze',
+      'total_duration': 'Gesamtdauer',
+      'rest_started': 'Pausenzeit',
+      'rest_finished': 'Pause beendet!',
+      'rest_finished_body': 'Zeit für deinen nächsten Satz! 💪',
+      'monday': 'Montag',
+      'tuesday': 'Dienstag',
+      'wednesday': 'Mittwoch',
+      'thursday': 'Donnerstag',
+      'friday': 'Freitag',
+      'saturday': 'Samstag',
+      'sunday': 'Sonntag',
+      'mon': 'Mo',
+      'tue': 'Di',
+      'wed': 'Mi',
+      'thu': 'Do',
+      'fri': 'Fr',
+      'sat': 'Sa',
+      'sun': 'So',
+      'day': 'Tag',
+    },
+
+    // ═══════════════════════════════════════════════════
+    //  FRENCH (partial, fallback to EN for missing keys)
+    // ═══════════════════════════════════════════════════
+    'fr': {
+      'home': 'Accueil',
+      'workouts': 'Entraînements',
+      'library': 'Bibliothèque',
+      'stats': 'Statistiques',
+      'settings': 'Paramètres',
+      'profile': 'Profil',
+      'preferences': 'Préférences',
+      'theme': 'Thème',
+      'language': 'Langue',
+      'measurement_system': 'Système de mesure',
+      'metric': 'Métrique',
+      'imperial': 'Impérial',
+      'english': 'English',
+      'turkish': 'Türkçe',
+      'spanish': 'Español',
+      'german': 'Deutsch',
+      'french': 'Français',
+      'save': 'Enregistrer',
+      'cancel': 'Annuler',
+      'delete': 'Supprimer',
+      'finish': 'Terminer',
+      'next_training': 'Prochain entraînement',
+      'weekly_overview': 'Résumé hebdomadaire',
+      'rest_day': 'Jour de repos 😌',
+      'start_free_workout': 'Commencer un entraînement libre',
+      'total_workouts': 'Total des entraînements',
+      'total_volume': 'Volume total',
+      'total_sets': 'Total des séries',
+      'total_duration': 'Durée totale',
+      'rest_started': 'Temps de repos',
+      'rest_finished': 'Repos terminé !',
+      'rest_finished_body': 'Il est temps pour ta prochaine série ! 💪',
+      'monday': 'Lundi',
+      'tuesday': 'Mardi',
+      'wednesday': 'Mercredi',
+      'thursday': 'Jeudi',
+      'friday': 'Vendredi',
+      'saturday': 'Samedi',
+      'sunday': 'Dimanche',
+      'mon': 'Lun',
+      'tue': 'Mar',
+      'wed': 'Mer',
+      'thu': 'Jeu',
+      'fri': 'Ven',
+      'sat': 'Sam',
+      'sun': 'Dim',
+      'day': 'Jour',
     },
   };
 }

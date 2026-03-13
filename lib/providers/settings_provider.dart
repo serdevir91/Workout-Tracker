@@ -201,6 +201,10 @@ class SettingsProvider with ChangeNotifier {
         return 'tr_TR';
       case 'es':
         return 'es_ES';
+      case 'de':
+        return 'de_DE';
+      case 'fr':
+        return 'fr_FR';
       case 'en':
       default:
         return 'en_US';

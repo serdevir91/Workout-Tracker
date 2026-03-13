@@ -25,7 +25,7 @@
 - **Calories Chart:** Track calories burned over time with line chart visualization.
 - **Stats Dashboard:** Overview cards for total workouts, volume, duration, and sets with session-level breakdown.
 - **Settings & Profile:** Configure theme, color palette, background mode, language, weight unit (kg/lbs), height, and body measurements.
-- **Multi-Language Support:** English, Turkish (Turkce), and Spanish (Espanol) localization built-in.
+- **Multi-Language Support:** English, Turkish (Türkçe), Spanish (Español), German (Deutsch), and French (Français) localization built-in.
 - **First Day of Week Setting:** Choose Monday, Saturday, or Sunday as your week start - workout plans sort accordingly.
 - **Add Exercise from Library:** Long-press or tap "Add to Workout" from any exercise detail to add it to a workout plan.
 - **Redesigned Exercise Detail Screen:** Hero images with SliverAppBar, auto-cycling GIF-like animation, card-based metrics, modern history cards.
@@ -75,7 +75,7 @@ flutter build windows
 | **Local Database** | sqflite (SQLite) |
 | **State Management** | Provider |
 | **UI Components** | TableCalendar, Custom IndexedStack Navigation |
-| **Localization** | Custom translation system (EN / TR / ES) |
+| **Localization** | Custom translation system (EN / TR / ES / DE / FR) |
 
 ## Project Structure
 
@@ -83,7 +83,7 @@ flutter build windows
 lib/
 |-- main.dart                  # App entry point
 |-- db/                        # Database helper (SQLite)
-|-- l10n/                      # Translations (EN, TR)
+|-- l10n/                      # Translations (EN, TR, ES, DE, FR)
 |-- models/                    # Data models (Workout, Plan, etc.)
 |-- providers/                 # State management (Workout, Settings)
 |-- screens/                   # All app screens
@@ -126,11 +126,20 @@ flutter build apk --release
 flutter build windows
 ```
 
-## What's New (v3.1.5)
+## What's New (v3.1.6)
+
+- **New Languages Added** - German (Deutsch) and French (Français) were added to the app language picker.
+- **Localization Infrastructure Updated** - Date/locale mapping now supports `de_DE` and `fr_FR`.
+- **README Updated** - Documentation now reflects EN/TR/ES/DE/FR localization support.
+
+<details>
+<summary>v3.1.5 Changes</summary>
 
 - **Cardio Issue Fixed** - Cardio exercises now handle timer/session flow more reliably during active workouts.
 - **Session Completion Reliability** - Workout session finishing logic was improved to reduce incomplete or inconsistent summaries.
 - **Stats & Summary Consistency** - Stats and workout summary calculations were aligned with the updated workout/session flow.
+
+</details>
 
 <details>
 <summary>v3.0.1 Changes</summary>

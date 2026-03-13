@@ -16,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-
   /// Request storage permissions based on Android version.
   Future<bool> _requestStoragePermission(BuildContext context) async {
     if (await Permission.manageExternalStorage.isGranted) return true;
@@ -31,7 +30,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final t = Translations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(t.get('storage_permission_required'), style: const TextStyle(color: Colors.white)),
+          content: Text(
+            t.get('storage_permission_required'),
+            style: const TextStyle(color: Colors.white),
+          ),
           backgroundColor: const Color(0xFFFF6B6B),
           duration: const Duration(seconds: 5),
           action: SnackBarAction(
@@ -60,7 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (selectedDir == null) return;
 
       final now = DateTime.now();
-      final timestamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final timestamp =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
       final backupPath = '$selectedDir/workout_backup_$timestamp.db';
       final backupFile = File(backupPath);
 
@@ -73,7 +76,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${t.get('backup_saved')}:\n$backupPath', style: const TextStyle(color: Colors.white)),
+            content: Text(
+              '${t.get('backup_saved')}:\n$backupPath',
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: Theme.of(context).colorScheme.secondary,
             duration: const Duration(seconds: 5),
           ),
@@ -82,7 +88,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${t.get('backup_failed')}: $e', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFFF6B6B)),
+          SnackBar(
+            content: Text(
+              '${t.get('backup_failed')}: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFFFF6B6B),
+          ),
         );
       }
     }
@@ -105,7 +117,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(t.get('file_not_found'), style: const TextStyle(color: Colors.white)),
+              content: Text(
+                t.get('file_not_found'),
+                style: const TextStyle(color: Colors.white),
+              ),
               backgroundColor: const Color(0xFFFF6B6B),
             ),
           );
@@ -134,7 +149,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(t.get('restore_success'), style: const TextStyle(color: Colors.white)),
+              content: Text(
+                t.get('restore_success'),
+                style: const TextStyle(color: Colors.white),
+              ),
               backgroundColor: Theme.of(context).colorScheme.secondary,
               duration: const Duration(seconds: 4),
             ),
@@ -144,7 +162,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${t.get('restore_failed')}: $e', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFFF6B6B)),
+          SnackBar(
+            content: Text(
+              '${t.get('restore_failed')}: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFFFF6B6B),
+          ),
         );
       }
     }
@@ -156,28 +180,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final heightCtrl = TextEditingController(
       text: (provider.height ?? 0) > 0
-          ? (isMetric ? provider.height! : provider.displayLength(provider.height!)).toStringAsFixed(1)
+          ? (isMetric
+                    ? provider.height!
+                    : provider.displayLength(provider.height!))
+                .toStringAsFixed(1)
           : '',
     );
     final weightCtrl = TextEditingController(
       text: (provider.weight ?? 0) > 0
-          ? (isMetric ? provider.weight! : provider.displayWeight(provider.weight!)).toStringAsFixed(1)
+          ? (isMetric
+                    ? provider.weight!
+                    : provider.displayWeight(provider.weight!))
+                .toStringAsFixed(1)
           : '',
     );
 
     // Body measurement controllers
     final Map<String, TextEditingController> measureControllers = {};
     final measurementKeys = [
-      'arm_circumference', 'waist_circumference', 'shoulder_width',
-      'chest_circumference', 'hip_circumference', 'thigh_circumference',
-      'calf_circumference', 'neck_circumference', 'forearm_circumference',
+      'arm_circumference',
+      'waist_circumference',
+      'shoulder_width',
+      'chest_circumference',
+      'hip_circumference',
+      'thigh_circumference',
+      'calf_circumference',
+      'neck_circumference',
+      'forearm_circumference',
     ];
     final measurements = provider.allMeasurements;
     for (final key in measurementKeys) {
       final raw = measurements[key];
       measureControllers[key] = TextEditingController(
         text: (raw ?? 0) > 0
-            ? (isMetric ? raw! : provider.displayLength(raw!)).toStringAsFixed(1)
+            ? (isMetric ? raw! : provider.displayLength(raw!)).toStringAsFixed(
+                1,
+              )
             : '',
       );
     }
@@ -209,13 +247,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(t.get('edit_body_stats'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      t.get('edit_body_stats'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
-                      icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      icon: Icon(
+                        Icons.close,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -243,18 +294,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
                     Text(
                       t.get('body_measurements'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    ...measurementKeys.map((key) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildMeasurementField(
-                        label: t.get(key),
-                        controller: measureControllers[key]!,
-                        suffix: provider.lengthUnit,
-                        icon: _getMeasurementIcon(key),
+                    ...measurementKeys.map(
+                      (key) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildMeasurementField(
+                          label: t.get(key),
+                          controller: measureControllers[key]!,
+                          suffix: provider.lengthUnit,
+                          icon: _getMeasurementIcon(key),
+                        ),
                       ),
-                    )),
+                    ),
                   ],
                 ),
               ),
@@ -268,22 +325,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondary,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     onPressed: () {
                       final h = double.tryParse(heightCtrl.text) ?? 0;
                       final w = double.tryParse(weightCtrl.text) ?? 0;
                       // Convert to storage units (cm, kg)
-                      final heightCm = isMetric ? h : provider.toCmForStorage(h);
-                      final weightKg = isMetric ? w : provider.toKgForStorage(w);
+                      final heightCm = isMetric
+                          ? h
+                          : provider.toCmForStorage(h);
+                      final weightKg = isMetric
+                          ? w
+                          : provider.toKgForStorage(w);
                       provider.updateProfile(heightCm, weightKg);
 
                       // Body measurements
                       final Map<String, double?> bodyValues = {};
                       for (final key in measurementKeys) {
-                        final v = double.tryParse(measureControllers[key]!.text);
+                        final v = double.tryParse(
+                          measureControllers[key]!.text,
+                        );
                         if (v != null && v > 0) {
-                          bodyValues[key] = isMetric ? v : provider.toCmForStorage(v);
+                          bodyValues[key] = isMetric
+                              ? v
+                              : provider.toCmForStorage(v);
                         }
                       }
                       provider.updateBodyMeasurements(
@@ -295,18 +362,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         thighCircumference: bodyValues['thigh_circumference'],
                         calfCircumference: bodyValues['calf_circumference'],
                         neckCircumference: bodyValues['neck_circumference'],
-                        forearmCircumference: bodyValues['forearm_circumference'],
+                        forearmCircumference:
+                            bodyValues['forearm_circumference'],
                       );
 
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(t.get('measurement_saved'), style: const TextStyle(color: Colors.white)),
-                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          content: Text(
+                            t.get('measurement_saved'),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
                         ),
                       );
                     },
-                    child: Text(t.get('save'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      t.get('save'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -332,15 +411,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+          prefixIcon: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: 20,
+          ),
           labelText: label,
-          labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
           suffixText: suffix,
-          suffixStyle: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
+          suffixStyle: TextStyle(
+            color: Theme.of(context).colorScheme.secondary,
+            fontWeight: FontWeight.bold,
+          ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -348,31 +443,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   IconData _getMeasurementIcon(String key) {
     switch (key) {
-      case 'arm_circumference': return Icons.fitness_center;
-      case 'waist_circumference': return Icons.straighten;
-      case 'shoulder_width': return Icons.accessibility_new;
-      case 'chest_circumference': return Icons.expand;
-      case 'hip_circumference': return Icons.accessibility;
-      case 'thigh_circumference': return Icons.directions_walk;
-      case 'calf_circumference': return Icons.directions_run;
-      case 'neck_circumference': return Icons.person;
-      case 'forearm_circumference': return Icons.front_hand;
-      default: return Icons.straighten;
+      case 'arm_circumference':
+        return Icons.fitness_center;
+      case 'waist_circumference':
+        return Icons.straighten;
+      case 'shoulder_width':
+        return Icons.accessibility_new;
+      case 'chest_circumference':
+        return Icons.expand;
+      case 'hip_circumference':
+        return Icons.accessibility;
+      case 'thigh_circumference':
+        return Icons.directions_walk;
+      case 'calf_circumference':
+        return Icons.directions_run;
+      case 'neck_circumference':
+        return Icons.person;
+      case 'forearm_circumference':
+        return Icons.front_hand;
+      default:
+        return Icons.straighten;
     }
   }
 
   void _showThemePicker(BuildContext context, SettingsProvider provider) {
     final t = Translations.of(context);
     final options = [
-      {'key': 'system', 'label': t.get('system_theme'), 'icon': Icons.brightness_auto},
+      {
+        'key': 'system',
+        'label': t.get('system_theme'),
+        'icon': Icons.brightness_auto,
+      },
       {'key': 'dark', 'label': t.get('dark_theme'), 'icon': Icons.dark_mode},
       {'key': 'light', 'label': t.get('light_theme'), 'icon': Icons.light_mode},
     ];
     final current = provider.themeMode == ThemeMode.light
         ? 'light'
         : provider.themeMode == ThemeMode.dark
-            ? 'dark'
-            : 'system';
+        ? 'dark'
+        : 'system';
 
     _showOptionsPicker(
       context: context,
@@ -389,6 +498,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       {'key': 'en', 'label': t.get('english'), 'icon': Icons.language},
       {'key': 'tr', 'label': t.get('turkish'), 'icon': Icons.language},
       {'key': 'es', 'label': t.get('spanish'), 'icon': Icons.language},
+      {'key': 'de', 'label': t.get('german'), 'icon': Icons.language},
+      {'key': 'fr', 'label': t.get('french'), 'icon': Icons.language},
     ];
 
     _showOptionsPicker(
@@ -400,11 +511,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showMeasurementSystemPicker(BuildContext context, SettingsProvider provider) {
+  void _showMeasurementSystemPicker(
+    BuildContext context,
+    SettingsProvider provider,
+  ) {
     final t = Translations.of(context);
     final options = [
-      {'key': 'metric', 'label': t.get('metric'), 'icon': Icons.straighten, 'desc': 'kg, cm'},
-      {'key': 'imperial', 'label': t.get('imperial'), 'icon': Icons.square_foot, 'desc': 'lbs, in'},
+      {
+        'key': 'metric',
+        'label': t.get('metric'),
+        'icon': Icons.straighten,
+        'desc': 'kg, cm',
+      },
+      {
+        'key': 'imperial',
+        'label': t.get('imperial'),
+        'icon': Icons.square_foot,
+        'desc': 'lbs, in',
+      },
     ];
 
     _showOptionsPicker(
@@ -416,7 +540,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showColorPalettePicker(BuildContext context, SettingsProvider provider, Translations t) {
+  void _showColorPalettePicker(
+    BuildContext context,
+    SettingsProvider provider,
+    Translations t,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -450,7 +578,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 4),
               Text(
                 t.get('color_palette_desc'),
-                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
               ...AppColorPalette.presets.map((palette) {
@@ -464,7 +595,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Navigator.pop(context);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? palette.primary.withValues(alpha: 0.15)
@@ -513,13 +647,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               t.get(palette.nameKey),
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: isSelected ? palette.primary : Colors.white70,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? palette.primary
+                                    : Colors.white70,
                               ),
                             ),
                           ),
                           if (isSelected)
-                            Icon(Icons.check_circle, color: palette.primary, size: 22),
+                            Icon(
+                              Icons.check_circle,
+                              color: palette.primary,
+                              size: 22,
+                            ),
                         ],
                       ),
                     ),
@@ -533,13 +675,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showBackgroundModePicker(BuildContext context, SettingsProvider provider, Translations t) {
+  void _showBackgroundModePicker(
+    BuildContext context,
+    SettingsProvider provider,
+    Translations t,
+  ) {
     _showOptionsPicker(
       context: context,
       title: t.get('background_mode'),
       options: [
-        {'key': 'default', 'label': t.get('bg_default'), 'icon': Icons.brightness_6},
-        {'key': 'pure_black', 'label': t.get('pure_black'), 'icon': Icons.brightness_1},
+        {
+          'key': 'default',
+          'label': t.get('bg_default'),
+          'icon': Icons.brightness_6,
+        },
+        {
+          'key': 'pure_black',
+          'label': t.get('pure_black'),
+          'icon': Icons.brightness_1,
+        },
       ],
       currentValue: provider.backgroundMode,
       onSelect: (value) => provider.updateBackgroundMode(value),
@@ -565,29 +719,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 16),
             ...options.map((opt) {
               final isSelected = opt['key'] == currentValue;
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHigh,
+                  color: isSelected
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.15)
+                      : Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: ListTile(
-                  leading: Icon(opt['icon'] as IconData, color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                  title: Text(opt['label'] as String, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                  subtitle: opt['desc'] != null ? Text(opt['desc'] as String, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)) : null,
-                  trailing: isSelected ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.secondary) : null,
+                  leading: Icon(
+                    opt['icon'] as IconData,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  title: Text(
+                    opt['label'] as String,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  subtitle: opt['desc'] != null
+                      ? Text(
+                          opt['desc'] as String,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        )
+                      : null,
+                  trailing: isSelected
+                      ? Icon(
+                          Icons.check_circle,
+                          color: Theme.of(context).colorScheme.secondary,
+                        )
+                      : null,
                   onTap: () {
                     onSelect(opt['key'] as String);
                     Navigator.pop(ctx);
@@ -604,30 +803,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getThemeLabel(SettingsProvider provider, Translations t) {
     switch (provider.themeMode) {
-      case ThemeMode.light: return t.get('light_theme');
-      case ThemeMode.dark: return t.get('dark_theme');
-      default: return t.get('system_theme');
+      case ThemeMode.light:
+        return t.get('light_theme');
+      case ThemeMode.dark:
+        return t.get('dark_theme');
+      default:
+        return t.get('system_theme');
     }
   }
 
   String _getLanguageLabel(SettingsProvider provider) {
     switch (provider.language) {
-      case 'tr': return 'Türkçe';
-      case 'es': return 'Español';
-      default: return 'English';
+      case 'tr':
+        return 'Türkçe';
+      case 'es':
+        return 'Español';
+      default:
+        return 'English';
     }
   }
 
   String _getFirstDayLabel(SettingsProvider provider) {
     switch (provider.firstDayOfWeek) {
-      case 1: return 'Monday';
-      case 6: return 'Saturday';
-      case 7: return 'Sunday';
-      default: return SettingsProvider.dayNames[(provider.firstDayOfWeek - 1).clamp(0, 6)];
+      case 1:
+        return 'Monday';
+      case 6:
+        return 'Saturday';
+      case 7:
+        return 'Sunday';
+      default:
+        return SettingsProvider.dayNames[(provider.firstDayOfWeek - 1).clamp(
+          0,
+          6,
+        )];
     }
   }
 
-  void _showFirstDayOfWeekPicker(BuildContext context, SettingsProvider provider, Translations t) {
+  void _showFirstDayOfWeekPicker(
+    BuildContext context,
+    SettingsProvider provider,
+    Translations t,
+  ) {
     final options = [
       {'key': '1', 'label': t.get('monday'), 'icon': Icons.calendar_today},
       {'key': '6', 'label': t.get('saturday'), 'icon': Icons.calendar_today},
@@ -650,9 +866,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(t.get('settings')),
-      ),
+      appBar: AppBar(title: Text(t.get('settings'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -696,7 +910,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildSettingsTile(
               icon: Icons.dark_mode,
-              iconColor: provider.isPureBlack ? Colors.black : Theme.of(context).colorScheme.onSurfaceVariant,
+              iconColor: provider.isPureBlack
+                  ? Colors.black
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
               title: t.get('background_mode'),
               value: t.get(provider.isPureBlack ? 'pure_black' : 'bg_default'),
               onTap: () => _showBackgroundModePicker(context, provider, t),
@@ -733,17 +949,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    title: Text(t.get('restore_title'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                    content: Text(t.get('restore_confirm'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    title: Text(
+                      t.get('restore_title'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    content: Text(
+                      t.get('restore_confirm'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t.get('cancel'))),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(t.get('cancel')),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _restoreDatabase(context);
                         },
-                        child: Text(t.get('restore'), style: const TextStyle(color: Color(0xFFFF6B6B))),
+                        child: Text(
+                          t.get('restore'),
+                          style: const TextStyle(color: Color(0xFFFF6B6B)),
+                        ),
                       ),
                     ],
                   ),
@@ -778,8 +1012,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfileCard(SettingsProvider provider, Translations t) {
     final hasMeasurements = provider.hasBodyMeasurements;
-    final heightStr = (provider.height ?? 0) > 0 ? provider.formatHeight(provider.height!) : '--';
-    final weightStr = (provider.weight ?? 0) > 0 ? provider.formatWeight(provider.weight!) : '--';
+    final heightStr = (provider.height ?? 0) > 0
+        ? provider.formatHeight(provider.height!)
+        : '--';
+    final weightStr = (provider.weight ?? 0) > 0
+        ? provider.formatWeight(provider.weight!)
+        : '--';
 
     return Container(
       decoration: BoxDecoration(
@@ -803,30 +1041,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 // Avatar
                 Container(
-                  width: 52, height: 52,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [Theme.of(context).colorScheme.primary, const Color(0xFF8B5CF6)],
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        const Color(0xFF8B5CF6),
+                      ],
                     ),
                     boxShadow: [
-                      BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3), blurRadius: 12),
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                      ),
                     ],
                   ),
-                  child: const Icon(Icons.person, color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.get('my_body_stats'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        t.get('my_body_stats'),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           _buildStatChip(Icons.height, heightStr),
                           const SizedBox(width: 12),
-                          _buildStatChip(Icons.monitor_weight_outlined, weightStr),
+                          _buildStatChip(
+                            Icons.monitor_weight_outlined,
+                            weightStr,
+                          ),
                         ],
                       ),
                     ],
@@ -837,10 +1098,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.edit, color: Theme.of(context).colorScheme.secondary, size: 20),
+                    child: Icon(
+                      Icons.edit,
+                      color: Theme.of(context).colorScheme.secondary,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
@@ -848,11 +1115,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           // Body measurements summary
           if (hasMeasurements) ...[
-            Divider(color: Theme.of(context).colorScheme.outline, height: 1, indent: 20, endIndent: 20),
+            Divider(
+              color: Theme.of(context).colorScheme.outline,
+              height: 1,
+              indent: 20,
+              endIndent: 20,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Wrap(
-                spacing: 8, runSpacing: 8,
+                spacing: 8,
+                runSpacing: 8,
                 children: _buildMeasurementChips(provider, t),
               ),
             ),
@@ -864,16 +1137,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3), style: BorderStyle.solid),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.3),
+                      style: BorderStyle.solid,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 16),
+                      Icon(
+                        Icons.add,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
-                      Text(t.get('update_measurements'), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(
+                        t.get('update_measurements'),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -890,30 +1181,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.secondary, size: 14),
         const SizedBox(width: 4),
-        Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        Text(
+          value,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }
 
-  List<Widget> _buildMeasurementChips(SettingsProvider provider, Translations t) {
+  List<Widget> _buildMeasurementChips(
+    SettingsProvider provider,
+    Translations t,
+  ) {
     final measurements = provider.allMeasurements;
     final List<Widget> chips = [];
 
     for (final entry in measurements.entries) {
       final value = entry.value;
       if (value != null && value > 0) {
-        chips.add(Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
+        chips.add(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+            ),
+            child: Text(
+              '${t.get(entry.key)}: ${provider.formatMeasurement(value)}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
+            ),
           ),
-          child: Text(
-            '${t.get(entry.key)}: ${provider.formatMeasurement(value)}',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11),
-          ),
-        ));
+        );
       }
     }
     return chips;
@@ -932,7 +1237,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : const Color(0xFFE5E5EA),
         ),
         boxShadow: Theme.of(context).brightness == Brightness.light
-            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2))]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ]
             : null,
       ),
       child: Column(children: children),
@@ -973,20 +1284,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w600, fontSize: 15,
-                        )),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
                         if (value.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
-                            maxLines: 2, overflow: TextOverflow.ellipsis),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ],
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
