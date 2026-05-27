@@ -61,7 +61,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
 
     if (_data == null || _data!['workout'] == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(Translations.of(context).get('workout_details'))),
+        appBar: AppBar(
+          title: Text(Translations.of(context).get('workout_details')),
+        ),
         body: Center(child: Text('Workout not found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
       );
     }
@@ -126,15 +128,15 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Theme.of(context).colorScheme.outline)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Expanded(child: _buildSummaryColumn('Date', formatShortDate(workout.startTime), Icons.calendar_today, Theme.of(context).colorScheme.primary)),
-            Expanded(child: _buildSummaryColumn('Time', formatTime(workout.startTime), Icons.access_time, Theme.of(context).colorScheme.secondary)),
-            Expanded(child: _buildSummaryColumn('Duration', formatDuration(duration), Icons.timer, Theme.of(context).colorScheme.secondary)),
+            Expanded(child: _buildSummaryColumn(Translations.of(context).get('day') /*fallback*/, formatShortDate(workout.startTime), Icons.calendar_today, Theme.of(context).colorScheme.primary)),
+            Expanded(child: _buildSummaryColumn('Time' /* No trans key found currently, maybe add one? */, formatTime(workout.startTime), Icons.access_time, Theme.of(context).colorScheme.secondary)),
+            Expanded(child: _buildSummaryColumn(Translations.of(context).get('total_duration'), formatDuration(duration), Icons.timer_outlined, Theme.of(context).colorScheme.secondary)),
             if (calories > 0)
-              Expanded(child: _buildSummaryColumn('Calories', '${calories.toInt()}', Icons.local_fire_department, Colors.orange)),
+              Expanded(child: _buildSummaryColumn('Kcal', '${calories.toInt()}', Icons.local_fire_department, Colors.orange)),
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/workout_plan_models.dart';
 import '../providers/workout_provider.dart';
 import '../utils/exercise_db.dart';
+import '../widgets/entitlement_badge.dart';
 import 'exercise_info_screen.dart';
 import 'settings_screen.dart';
 
@@ -145,6 +146,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     ),
                   ),
                   actions: [
+                    ...buildEntitlementBadgeActions(context),
                     // Grid/List toggle (available in both browse and pick modes)
                     IconButton(
                       icon: Icon(

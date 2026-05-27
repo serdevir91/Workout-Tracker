@@ -58,7 +58,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 13, // v13: first_day_of_week setting
+      version: 15, // v15: achievements and streak foundation
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -110,13 +110,14 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE user_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
-        theme TEXT DEFAULT 'system',
+        theme TEXT DEFAULT 'dark',
         language TEXT DEFAULT 'en',
         unit TEXT DEFAULT 'kg',
         measurement_system TEXT DEFAULT 'metric',
         height REAL,
         weight REAL,
         last_weight_update TEXT,
+        gender TEXT,
         arm_circumference REAL,
         waist_circumference REAL,
         shoulder_width REAL,
@@ -130,8 +131,8 @@ class DatabaseHelper {
         display_all_data INTEGER DEFAULT 1,
         auto_positioning INTEGER DEFAULT 0,
         workout_days TEXT DEFAULT '1,2,3,4,5,6,7',
-        color_palette TEXT DEFAULT 'default',
-        background_mode TEXT DEFAULT 'default',
+        color_palette TEXT DEFAULT 'ocean',
+        background_mode TEXT DEFAULT 'pure_black',
         first_day_of_week INTEGER DEFAULT 1
       )
     ''');
@@ -159,6 +160,17 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE off_days (
         date TEXT PRIMARY KEY
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE achievements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        achievement_key TEXT NOT NULL UNIQUE,
+        achievement_type TEXT NOT NULL,
+        threshold INTEGER NOT NULL,
+        unlocked_value INTEGER NOT NULL DEFAULT 0,
+        unlocked_at TEXT NOT NULL
       )
     ''');
 
@@ -199,6 +211,9 @@ class DatabaseHelper {
     await db.execute(
       'CREATE INDEX idx_workouts_start_time ON workouts(start_time)',
     );
+    await db.execute(
+      'CREATE INDEX idx_achievements_type ON achievements(achievement_type)',
+    );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -212,7 +227,7 @@ class DatabaseHelper {
       await db.execute('''
         CREATE TABLE user_settings (
           id INTEGER PRIMARY KEY CHECK (id = 1),
-          theme TEXT DEFAULT 'system',
+          theme TEXT DEFAULT 'dark',
           language TEXT DEFAULT 'en',
           unit TEXT DEFAULT 'kg',
           height REAL,
@@ -413,6 +428,26 @@ class DatabaseHelper {
           'ALTER TABLE user_settings ADD COLUMN first_day_of_week INTEGER DEFAULT 1',
         );
       } catch (_) {}
+    }
+    if (oldVersion < 14) {
+      try {
+        await db.execute('ALTER TABLE user_settings ADD COLUMN gender TEXT');
+      } catch (_) {}
+    }
+    if (oldVersion < 15) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS achievements (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          achievement_key TEXT NOT NULL UNIQUE,
+          achievement_type TEXT NOT NULL,
+          threshold INTEGER NOT NULL,
+          unlocked_value INTEGER NOT NULL DEFAULT 0,
+          unlocked_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_achievements_type ON achievements(achievement_type)',
+      );
     }
   }
 
@@ -768,6 +803,80 @@ class DatabaseHelper {
     return result;
   }
 
+  /// Returns date -> max completion percentage for completed workouts.
+  Future<Map<String, double>> getDailyMaxCompletionMap() async {
+    final db = await database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT
+        date(start_time) as workout_date,
+        MAX(COALESCE(completion_percentage, 0)) as max_completion
+      FROM workouts
+      WHERE end_time IS NOT NULL
+      GROUP BY date(start_time)
+    ''');
+
+    final Map<String, double> result = <String, double>{};
+    for (final Map<String, dynamic> row in rows) {
+      final String? date = row['workout_date'] as String?;
+      if (date == null || date.isEmpty) {
+        continue;
+      }
+      result[date] = (row['max_completion'] as num?)?.toDouble() ?? 0;
+    }
+    return result;
+  }
+
+  /// Returns all-time sum of reps from completed sets in completed workouts.
+  Future<int> getTotalCompletedReps() async {
+    final db = await database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT COALESCE(SUM(s.reps), 0) as total_reps
+      FROM exercise_sets s
+      JOIN exercises e ON e.id = s.exercise_id
+      JOIN workouts w ON w.id = e.workout_id
+      WHERE s.completed = 1 AND w.end_time IS NOT NULL
+    ''');
+    return (rows.first['total_reps'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Returns all-time count of completed sets in completed workouts.
+  Future<int> getTotalCompletedSets() async {
+    final db = await database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT COUNT(s.id) as total_sets
+      FROM exercise_sets s
+      JOIN exercises e ON e.id = s.exercise_id
+      JOIN workouts w ON w.id = e.workout_id
+      WHERE s.completed = 1 AND w.end_time IS NOT NULL
+    ''');
+    return (rows.first['total_sets'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Unlock achievement once. Duplicate keys are ignored.
+  Future<void> unlockAchievement({
+    required String achievementKey,
+    required String achievementType,
+    required int threshold,
+    required int unlockedValue,
+  }) async {
+    final db = await database;
+    await db.insert('achievements', {
+      'achievement_key': achievementKey,
+      'achievement_type': achievementType,
+      'threshold': threshold,
+      'unlocked_value': unlockedValue,
+      'unlocked_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<List<Map<String, dynamic>>> getAchievements() async {
+    final db = await database;
+    return db.query(
+      'achievements',
+      orderBy: 'achievement_type ASC, threshold ASC, unlocked_at ASC',
+    );
+  }
+
   /// Get all weekly stats in a single query (replaces 21 separate queries).
   Future<Map<String, List<double>>> getWeeklyAllStats() async {
     final db = await database;
@@ -880,7 +989,13 @@ class DatabaseHelper {
         w.start_time,
         COUNT(s.id) as sets,
         COALESCE(MAX(s.weight), 0) as max_weight,
-        COALESCE(SUM(s.reps), 0) as total_reps
+        COALESCE(SUM(s.reps), 0) as total_reps,
+        (
+          SELECT GROUP_CONCAT(s2.weight || 'x' || s2.reps, '|')
+          FROM exercise_sets s2
+          WHERE s2.exercise_id = e.id AND s2.completed = 1
+          ORDER BY s2.set_number ASC
+        ) as set_details
       FROM exercises e
       JOIN workouts w ON e.workout_id = w.id
       JOIN exercise_sets s ON e.id = s.exercise_id AND s.completed = 1

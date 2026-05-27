@@ -4,18 +4,24 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/workout_plan_models.dart';
 import '../models/workout_models.dart';
+import '../providers/monetization_provider.dart';
 import '../providers/workout_provider.dart';
 import '../utils/formatters.dart';
 import '../utils/exercise_db.dart';
 import '../l10n/translations.dart';
 import '../db/database_helper.dart';
+import '../services/ad_service.dart';
 import 'active_workout_screen.dart';
 import 'workout_detail_screen.dart';
 import 'stats_screen.dart';
 import 'exercise_library_screen.dart';
 import 'create_routine_screen.dart';
+import 'paywall_screen.dart';
+import 'programs_screen.dart';
 import 'settings_screen.dart';
 import '../providers/settings_provider.dart';
+import '../widgets/banner_ad_slot.dart';
+import '../widgets/entitlement_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,7 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final Map<String, double> grouped = {};
     for (final row in exerciseSets) {
-      final name = (row['name'] as String).toLowerCase();
+      final displayName = row['name'] as String;
+      final name = displayName.toLowerCase();
       final sets = (row['total_sets'] as num).toDouble();
       // Try exact match first, then fuzzy match for custom exercise names
       String group = muscleMap[name] ?? '';
@@ -111,7 +118,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       grouped[group] = (grouped[group] ?? 0) + sets;
     }
-    if (mounted) setState(() => _muscleGroupData = grouped);
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _muscleGroupData = grouped;
+    });
   }
 
   Future<void> _loadCaloriesData() async {
@@ -142,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<WorkoutProvider>();
+    final monetization = context.watch<MonetizationProvider>();
 
     // Auto-refresh charts when workout list changes (e.g., after finish/cancel/delete)
     final currentCount = provider.workouts.length;
@@ -193,8 +207,27 @@ class _HomeScreenState extends State<HomeScreen> {
           const StatsScreen(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (monetization.adsEnabled && _selectedIndex != 2)
+            BannerAdSlot(placement: _bannerPlacementForCurrentTab()),
+          _buildBottomNav(),
+        ],
+      ),
     );
+  }
+
+  AdPlacement _bannerPlacementForCurrentTab() {
+    switch (_selectedIndex) {
+      case 0:
+        return AdPlacement.home;
+      case 1:
+        return AdPlacement.workouts;
+      case 3:
+      default:
+        return AdPlacement.stats;
+    }
   }
 
   Widget _wrapWithScaffold(
@@ -203,7 +236,14 @@ class _HomeScreenState extends State<HomeScreen> {
     List<Widget>? actions,
   }) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), elevation: 0, actions: actions),
+      appBar: AppBar(
+        title: Text(title),
+        elevation: 0,
+        actions: [
+          ...buildEntitlementBadgeActions(context),
+          ...?actions,
+        ],
+      ),
       body: content,
     );
   }
@@ -365,6 +405,21 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         ElevatedButton.icon(
           onPressed: () {
+            final monetization = context.read<MonetizationProvider>();
+            if (!monetization.canCreateUnlimitedRoutines &&
+                provider.workoutPlans.length >=
+                    MonetizationProvider.freeRoutineLimit) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PaywallScreen(
+                    reason:
+                        'You reached the free routine limit. Upgrade to create unlimited routines.',
+                  ),
+                ),
+              );
+              return;
+            }
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreateRoutineScreen()),
@@ -378,6 +433,28 @@ class _HomeScreenState extends State<HomeScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProgramsScreen()),
+            );
+          },
+          icon: const Icon(Icons.explore, size: 20),
+          label: Text(
+            Translations.of(context).get('browse_programs'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.secondary,
+            side: BorderSide(color: Theme.of(context).colorScheme.secondary),
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -688,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'volume':
       default:
         final settings = context.read<SettingsProvider>();
-        // Volumes are stored as kg × reps; convert to display unit
+        // Volumes are stored as kg x reps; convert to display unit
         if (settings.measurementSystem == 'imperial') {
           activeData = _weeklyVolumes
               .map((v) => settings.displayWeight(v))
@@ -814,9 +891,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
   //  MUSCLE GROUP DISTRIBUTION - Donut Chart
-  // ═══════════════════════════════════════════════════════════
 
   static const Map<String, Color> _muscleColors = {
     'Chest': Color(0xFFFF6B6B),
@@ -921,9 +996,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
   //  BODY PROGRESS - Line Chart with measurement selector
-  // ═══════════════════════════════════════════════════════════
 
   static const Map<String, String> _bodyStatKeys = {
     'weight': 'weight',
@@ -1208,10 +1281,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Map<String, Color> colorMap,
   ) {
     final total = data.values.fold(0.0, (a, b) => a + b);
-    if (total == 0)
+    if (total == 0) {
       return _buildEmptyChartPlaceholder(
         Translations.of(context).get('no_data'),
       );
+    }
 
     // Sort by value descending, take top groups
     final sorted = data.entries.toList()
@@ -1319,9 +1393,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
   //  CALORIES BURNED - Dot/Line Chart
-  // ═══════════════════════════════════════════════════════════
 
   Widget _buildCaloriesChartSection() {
     return Column(
@@ -2002,9 +2074,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
 //  Chart data classes & painters
-// ═══════════════════════════════════════════════════════════
 
 class _ChartSegment {
   final String label;
@@ -2260,9 +2330,7 @@ class _CaloriesChartPainter extends CustomPainter {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
 //  Body Progress Line Chart Painter
-// ═══════════════════════════════════════════════════════════
 
 class _BodyProgressPainter extends CustomPainter {
   final List<Map<String, dynamic>> data;

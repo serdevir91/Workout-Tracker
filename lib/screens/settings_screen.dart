@@ -2,11 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+import '../providers/monetization_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/workout_provider.dart';
 import '../db/database_helper.dart';
 import '../l10n/translations.dart';
+import '../utils/body_composition.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,72 +17,36 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  /// Request storage permissions based on Android version.
-  Future<bool> _requestStoragePermission(BuildContext context) async {
-    if (await Permission.manageExternalStorage.isGranted) return true;
-
-    var status = await Permission.storage.request();
-    if (status.isGranted) return true;
-
-    status = await Permission.manageExternalStorage.request();
-    if (status.isGranted) return true;
-
-    if (context.mounted) {
-      final t = Translations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t.get('storage_permission_required'),
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFFFF6B6B),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: t.get('open_settings'),
-            textColor: Colors.white,
-            onPressed: () => openAppSettings(),
-          ),
-        ),
-      );
-    }
-    return false;
-  }
-
   Future<void> _backupDatabase(BuildContext context) async {
     final t = Translations.of(context);
     try {
-      final hasPermission = await _requestStoragePermission(context);
-      if (!hasPermission) return;
-
       final dbHelper = DatabaseHelper();
       final dbPath = await dbHelper.getDbPath();
-
-      final selectedDir = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select folder to save backup',
-      );
-      if (selectedDir == null) return;
-
+      final dbBytes = await File(dbPath).readAsBytes();
       final now = DateTime.now();
       final timestamp =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
-      final backupPath = '$selectedDir/workout_backup_$timestamp.db';
-      final backupFile = File(backupPath);
+      final backupPath = await FilePicker.saveFile(
+        dialogTitle: 'Select where to save backup',
+        fileName: 'workout_backup_$timestamp.db',
+        type: FileType.custom,
+        allowedExtensions: const ['db'],
+        bytes: dbBytes,
+      );
 
-      if (await backupFile.exists()) {
-        await backupFile.delete();
+      if (backupPath == null) {
+        return;
       }
-
-      await File(dbPath).copy(backupPath);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${t.get('backup_saved')}:\n$backupPath',
+              t.get('backup_saved'),
               style: const TextStyle(color: Colors.white),
             ),
             backgroundColor: Theme.of(context).colorScheme.secondary,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -99,13 +64,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-
   Future<void> _restoreDatabase(BuildContext context) async {
     final t = Translations.of(context);
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         dialogTitle: 'Select backup file to restore',
-        type: FileType.any,
+        type: FileType.custom,
+        allowedExtensions: const ['db'],
         allowMultiple: false,
       );
 
@@ -177,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showBodyStatsDialog(BuildContext context, SettingsProvider provider) {
     final t = Translations.of(context);
     final isMetric = provider.isMetric;
+    BodyGender? selectedGender = provider.gender;
 
     final heightCtrl = TextEditingController(
       text: (provider.height ?? 0) > 0
@@ -281,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildMeasurementField(
                       label: t.get('height'),
                       controller: heightCtrl,
-                      suffix: isMetric ? 'cm' : 'ft/in',
+                      suffix: provider.lengthUnit,
                       icon: Icons.height,
                     ),
                     const SizedBox(height: 12),
@@ -290,6 +256,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       controller: weightCtrl,
                       suffix: provider.unit,
                       icon: Icons.monitor_weight_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    StatefulBuilder(
+                      builder: (context, setModalState) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.get('gender'),
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildGenderChip(
+                                      context: context,
+                                      label: t.get('male'),
+                                      selected:
+                                          selectedGender == BodyGender.male,
+                                      onTap: () {
+                                        setModalState(() {
+                                          selectedGender = BodyGender.male;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _buildGenderChip(
+                                      context: context,
+                                      label: t.get('female'),
+                                      selected:
+                                          selectedGender == BodyGender.female,
+                                      onTap: () {
+                                        setModalState(() {
+                                          selectedGender = BodyGender.female;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -330,8 +363,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     onPressed: () {
-                      final h = double.tryParse(heightCtrl.text) ?? 0;
-                      final w = double.tryParse(weightCtrl.text) ?? 0;
+                      final h = _parseHeightInput(heightCtrl.text, isMetric) ?? 0;
+                      final w = _parseDecimalInput(weightCtrl.text) ?? 0;
                       // Convert to storage units (cm, kg)
                       final heightCm = isMetric
                           ? h
@@ -339,14 +372,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final weightKg = isMetric
                           ? w
                           : provider.toKgForStorage(w);
-                      provider.updateProfile(heightCm, weightKg);
+                      provider.updateProfile(
+                        heightCm,
+                        weightKg,
+                        gender: selectedGender,
+                      );
 
                       // Body measurements
                       final Map<String, double?> bodyValues = {};
                       for (final key in measurementKeys) {
-                        final v = double.tryParse(
-                          measureControllers[key]!.text,
-                        );
+                        final v = _parseDecimalInput(measureControllers[key]!.text);
                         if (v != null && v > 0) {
                           bodyValues[key] = isMetric
                               ? v
@@ -435,6 +470,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderChip({
+    required BuildContext context,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.14)
+              : Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -814,13 +887,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getLanguageLabel(SettingsProvider provider) {
     switch (provider.language) {
+      case 'en':
+        return 'English';
       case 'tr':
         return 'Türkçe';
       case 'es':
         return 'Español';
+      case 'de':
+        return 'Deutsch';
+      case 'fr':
+        return 'Français';
       default:
         return 'English';
     }
+  }
+
+  double? _parseDecimalInput(String value) {
+    final normalized = value.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) {
+      return null;
+    }
+    return double.tryParse(normalized);
+  }
+
+  double? _parseHeightInput(String value, bool isMetric) {
+    if (isMetric) {
+      return _parseDecimalInput(value);
+    }
+
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final feetInchesPattern = RegExp(
+      "^\\s*(\\d+)\\s*'\\s*(\\d+(?:[.,]\\d+)?)?\\s*\"?\\s*\$",
+    );
+    final match = feetInchesPattern.firstMatch(trimmed);
+    if (match != null) {
+      final feet = int.tryParse(match.group(1) ?? '') ?? 0;
+      final inches = _parseDecimalInput(match.group(2) ?? '0') ?? 0;
+      return (feet * 12) + inches;
+    }
+
+    return _parseDecimalInput(trimmed);
   }
 
   String _getFirstDayLabel(SettingsProvider provider) {
@@ -862,21 +972,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<SettingsProvider>();
+    final monetization = context.watch<MonetizationProvider>();
     final t = Translations(provider.language);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(t.get('settings'))),
+      appBar: AppBar(
+        title: Text(t.get('settings')),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── Profile / Body Stats Card ──
+          // Profile / Body Stats Card
           _buildSectionHeader(t.get('profile'), Icons.person),
           const SizedBox(height: 8),
           _buildProfileCard(provider, t),
           const SizedBox(height: 28),
 
-          // ── Preferences ──
+          // Preferences
           _buildSectionHeader(t.get('preferences'), Icons.tune),
           const SizedBox(height: 8),
           _buildSettingsCard([
@@ -928,7 +1041,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
           const SizedBox(height: 28),
 
-          // ── Data Management ──
+          if (!monetization.isSoftOpenMode) ...[
+            _buildSectionHeader('Premium', Icons.workspace_premium),
+            const SizedBox(height: 8),
+            _buildSettingsCard([
+              _buildSettingsTile(
+                icon: Icons.lock_open,
+                iconColor: const Color(0xFFFFBE0B),
+                title: 'Unlock Premium',
+                value: monetization.isPremiumUnlocked
+                    ? (monetization.isProBuild
+                        ? 'This Pro build already includes all premium features.'
+                        : 'Premium is already active on this account.')
+                    : 'Ad-free, unlimited routines, advanced stats and 1RM analysis.',
+                onTap: () {},
+              ),
+              if (!monetization.isProBuild)
+                _buildSettingsTile(
+                  icon: Icons.restore,
+                  iconColor: Theme.of(context).colorScheme.secondary,
+                  title: 'Restore Purchases',
+                  value: monetization.canShowBilling
+                      ? 'Restore premium subscriptions for this Google account.'
+                      : 'Available after installing the app from Google Play.',
+                  onTap: monetization.canShowBilling && !monetization.isBusy
+                      ? () => monetization.restorePurchases()
+                      : () {},
+                  isLast: true,
+                )
+              else
+                _buildSettingsTile(
+                  icon: Icons.verified,
+                  iconColor: Theme.of(context).colorScheme.secondary,
+                  title: 'Pro Version Active',
+                  value: 'Premium features are unlocked by default in this build.',
+                  onTap: () {},
+                  isLast: true,
+                ),
+            ]),
+            const SizedBox(height: 28),
+          ],
+
+          // Data Management
           _buildSectionHeader(t.get('data_management'), Icons.storage),
           const SizedBox(height: 8),
           _buildSettingsCard([
@@ -1332,3 +1486,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+
+

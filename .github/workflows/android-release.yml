@@ -1,4 +1,4 @@
-name: Android Release APK
+name: Android Release Bundles
 
 on:
   push:
@@ -31,13 +31,26 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build release APK
-        run: flutter build apk --release
+      - name: Build Free AAB
+        run: flutter build appbundle --release --flavor free --dart-define=APP_FLAVOR=free
 
-      - name: Create GitHub Release and upload APK
+      - name: Build Pro AAB
+        run: flutter build appbundle --release --flavor pro --dart-define=APP_FLAVOR=pro
+
+      - name: Build Free APK
+        run: flutter build apk --release --flavor free --dart-define=APP_FLAVOR=free
+
+      - name: Build Pro APK
+        run: flutter build apk --release --flavor pro --dart-define=APP_FLAVOR=pro
+
+      - name: Create GitHub Release and upload Android artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/bundle/freeRelease/app-free-release.aab
+            build/app/outputs/bundle/proRelease/app-pro-release.aab
+            build/app/outputs/flutter-apk/app-free-release.apk
+            build/app/outputs/flutter-apk/app-pro-release.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

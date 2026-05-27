@@ -140,10 +140,16 @@ class NotificationService {
     required int totalSeconds,
   }) async {
     if (!_isInitialized) await init();
+    if (remainingSeconds <= 0 || totalSeconds <= 0) {
+      await cancelRestTimerNotification();
+      return;
+    }
 
-    final progress = ((totalSeconds - remainingSeconds) / totalSeconds * 100)
+    final progress = (((totalSeconds - remainingSeconds) / totalSeconds) * 100)
+        .clamp(0, 100)
         .round();
-    final body = 'Resting... $progress% complete';
+    final body =
+        'Resting... ${formatDuration(remainingSeconds)} left | $progress% complete';
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(

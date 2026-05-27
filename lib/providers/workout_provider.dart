@@ -5,6 +5,7 @@ import '../models/workout_models.dart';
 import '../models/workout_plan_models.dart';
 import '../services/notification_service.dart';
 import '../utils/exercise_db.dart';
+import '../utils/streak_achievements.dart';
 
 class ActiveExercise {
   Exercise exercise;
@@ -286,6 +287,7 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
         state == AppLifecycleState.paused) {
       _workoutElapsedSeconds = _calculateWorkoutElapsed();
       elapsedSecondsNotifier.value = _workoutElapsedSeconds;
+      _refreshRestTimerNotification();
       _updateNotification();
       return;
     }
@@ -303,12 +305,17 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (remaining > 0) {
           _restTimerSeconds = remaining;
           restTimerNotifier.value = _restTimerSeconds;
+          _notificationService.showRestTimerNotification(
+            remainingSeconds: _restTimerSeconds,
+            totalSeconds: _restTimerTotalSeconds,
+          );
         } else if (_restTimerSeconds > 0) {
           // Rest finished while app was in background
           _restTimerSeconds = 0;
           restTimerNotifier.value = 0;
           _restTimerStartedAt = null;
           _restTimerTotalSeconds = 0;
+          _notificationService.cancelRestTimerNotification();
           _notificationService.showRestFinishedNotification();
         }
       }
@@ -1079,6 +1086,31 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  void _refreshRestTimerNotification() {
+    if (_restTimerStartedAt == null || _restTimerTotalSeconds <= 0) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final elapsed = now.difference(_restTimerStartedAt!).inSeconds;
+    final remaining = _restTimerTotalSeconds - elapsed;
+    if (remaining > 0) {
+      _restTimerSeconds = remaining;
+      restTimerNotifier.value = _restTimerSeconds;
+      _notificationService.showRestTimerNotification(
+        remainingSeconds: _restTimerSeconds,
+        totalSeconds: _restTimerTotalSeconds,
+      );
+    } else if (_restTimerSeconds > 0) {
+      _restTimerSeconds = 0;
+      _restTimerTotalSeconds = 0;
+      _restTimerStartedAt = null;
+      restTimerNotifier.value = 0;
+      _notificationService.cancelRestTimerNotification();
+      _notificationService.showRestFinishedNotification();
+    }
+  }
+
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;
@@ -1195,5 +1227,66 @@ class WorkoutProvider extends ChangeNotifier with WidgetsBindingObserver {
     String? startDate,
   ) async {
     return _db.getCaloriesPerWorkout(startDate);
+  }
+
+  Future<Map<String, dynamic>> getStatsInsights({
+    required List<int> workoutDays,
+    int completionThreshold = 80,
+  }) async {
+    final Map<String, double> completionByDay =
+        await _db.getDailyMaxCompletionMap();
+    final Set<String> offDayKeys = (await _db.getOffDays())
+        .map(_dateKey)
+        .toSet();
+
+    final StreakSnapshot streakSnapshot = calculateStreakSnapshot(
+      workoutDays: workoutDays.toSet(),
+      offDayKeys: offDayKeys,
+      completionByDay: completionByDay,
+      today: DateTime.now(),
+      completionThreshold: completionThreshold,
+    );
+
+    final int totalCompletedSets = await _db.getTotalCompletedSets();
+
+    for (final int threshold in kSetMilestones) {
+      if (totalCompletedSets >= threshold) {
+        await _db.unlockAchievement(
+          achievementKey: setAchievementKey(threshold),
+          achievementType: 'sets',
+          threshold: threshold,
+          unlockedValue: totalCompletedSets,
+        );
+      }
+    }
+
+    for (final int threshold in kStreakMilestones) {
+      if (streakSnapshot.currentStreakDays >= threshold) {
+        await _db.unlockAchievement(
+          achievementKey: streakAchievementKey(threshold),
+          achievementType: 'streak',
+          threshold: threshold,
+          unlockedValue: streakSnapshot.currentStreakDays,
+        );
+      }
+    }
+
+    final List<Map<String, dynamic>> achievements = await _db.getAchievements();
+    final Set<String> unlockedKeys = achievements
+        .map((entry) => entry['achievement_key'] as String? ?? '')
+        .where((entry) => entry.isNotEmpty)
+        .toSet();
+
+    return <String, dynamic>{
+      'streak': streakSnapshot.toMap(),
+      'achievements': achievements,
+      'unlockedAchievementKeys': unlockedKeys,
+      'totalCompletedSets': totalCompletedSets,
+      'completionThreshold': completionThreshold,
+    };
+  }
+
+  String _dateKey(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

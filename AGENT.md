@@ -1,16 +1,24 @@
 # Workout Tracker — Proje Rehberi (Agent Reference)
 
 > Bu dosya AI agent'ların projeyi hızlıca anlaması için oluşturulmuştur.
-> Son güncelleme: 4 Mart 2026
+> Son güncelleme: 20 Nisan 2026
 
 ---
 
 ## Genel Bakış
 Flutter ile yazılmış bir antrenman takip uygulaması. Android + Windows + Web desteği var.
-State management: **Provider**. Veritabanı: **SQLite (sqflite)** şema v13. ORM yok, ham SQL kullanılıyor.
+State management: **Provider**. Veritabanı: **SQLite (sqflite)** şema v15. ORM yok, ham SQL kullanılıyor.
 Egzersiz veritabanı: **free-exercise-db** (873 egzersiz, public domain / Unlicense).
 Görsel kaynağı: GitHub CDN üzerinden JPG resimler, otomatik GIF-benzeri animasyonlu gösterim.
 Tema: Koyu glassmorphism UI. Renk paleti: Mor `#6C63FF`, Mint yeşil `#00D4AA`, Hata kırmızı `#FF6B6B`, Arka plan `#0F0F23`.
+Android free flavor package id: **com.workouttracker.workout_tracker**.
+Monetization: soft-open modunda premium özellikler açık, paywall ve reklam yüzeyi gizli.
+Stats ekranı modern dashboard düzeninde; streak (program uyumu, %80 completion eşiği) ve kupa sistemi (50/100/1000 sets + 1/2/4 hafta streak milestone) içerir.
+Movement highlights bölümü Home ekranından kaldırılmıştır; yalnızca Stats ekranında gösterilir.
+İlk antrenman tamamlandıktan sonra koşula bağlı uygulama içi yıldız/yorum popup'ı gösterilir.
+Yedekleme/geri yükleme akışı Android'de dosya seçici (SAF uyumlu) üzerinden kullanıcı seçimiyle yapılır; geniş depolama izni kullanılmaz.
+Android 15 uyumluluğu için edge-to-edge hem Flutter (`SystemUiMode.edgeToEdge`) hem Android native (`FlutterFragmentActivity + enableEdgeToEdge()`) tarafında etkinleştirilmiştir.
+Release otomasyonu: `scripts/build_free_aab_auto_version.ps1` her çalıştırmada `pubspec.yaml` sürümünü otomatik artırır, `docs/play-release-notes.md` metadata bloğunu günceller ve free flavor AAB üretir.
 
 ---
 
@@ -21,7 +29,7 @@ Workout-Tracker/
 ├── lib/
 │   ├── main.dart                          # Uygulama girişi, tema, MultiProvider setup (~170 satır)
 │   ├── db/
-│   │   └── database_helper.dart           # Singleton SQLite helper, 7 tablo, v8 şema (~777 satır)
+│   │   └── database_helper.dart           # Singleton SQLite helper, 8 tablo, v15 şema (~777 satır)
 │   ├── l10n/
 │   │   └── translations.dart              # EN/TR/ES çeviri map'leri
 │   ├── models/
@@ -46,7 +54,8 @@ Workout-Tracker/
 │   │   └── workout_schedule_screen.dart   # Haftalık program
 │   ├── utils/
 │   │   ├── formatters.dart                # Süre, tarih, sayı formatlama
-│   │   └── exercise_db.dart               # free-exercise-db utility: findExercise, findMuscleGroup, imageUrl vb.
+│   │   ├── exercise_db.dart               # free-exercise-db utility: findExercise, findMuscleGroup, imageUrl vb.
+│   │   └── streak_achievements.dart       # streak hesaplama + set/streak milestone helper'ları
 │   └── widgets/
 │       └── exercise_thumbnail.dart        # Egzersiz küçük resim widget'ı (LRU cache)
 ├── assets/
@@ -54,13 +63,21 @@ Workout-Tracker/
 │   │   └── free_exercises.json            # 873 egzersiz (free-exercise-db, Unlicense)
 │   ├── images/                            # Uygulama görselleri
 │   └── screenshots/                       # Mağaza ekran görüntüleri
+├── docs/
+│   ├── google_play_release_checklist.md   # Google Play yayın kontrol listesi
+│   └── play-release-notes.md              # Play Console için çok dilli sürüm notları
 ├── android/
-│   └── app/src/main/AndroidManifest.xml   # INTERNET + storage + notification + foreground izinleri
+│   ├── app/src/main/AndroidManifest.xml   # INTERNET + notification + foreground izinleri + cutout mode
+│   └── app/src/main/kotlin/com/workouttracker/workout_tracker/MainActivity.kt # Native activity, edge-to-edge uyumluluk
+├── scripts/
+│   ├── sign_for_play_ownership.ps1         # Play ownership doğrulama için hedef fingerprint kontrollü imzalama scripti
+│   └── build_free_aab_auto_version.ps1     # Her build öncesi sürüm artırır, release notes metadata gunceller, free AAB uretir
 ├── windows/                               # Windows masaüstü desteği
 ├── web/                                   # Web desteği
 ├── test/
 │   └── widget_test.dart                   # Test dosyası
 ├── pubspec.yaml                           # Bağımlılıklar, asset tanımları
+├── build_free_aab_auto.bat                # Windows launcher (otomatik sürüm artırımlı AAB build)
 ├── TASKS.md                               # Görev listesi (aktif)
 ├── AGENT.md                               # Bu dosya
 └── .github/
@@ -69,7 +86,7 @@ Workout-Tracker/
 
 ---
 
-## Veritabanı Şeması (v13)
+## Veritabanı Şeması (v15)
 
 | Tablo | Sütunlar | İlişki |
 |-------|----------|--------|
@@ -78,6 +95,7 @@ Workout-Tracker/
 | `exercise_sets` | `id` PK, `exercise_id` FK, `set_number`, `weight`, `reps`, `completed` | → exercises (CASCADE) |
 | `user_settings` | `id` PK (=1), `theme`, `language`, `unit`, `height`, `weight`, `last_weight_update`, schedule fields | Singleton satır |
 | `off_days` | `date` PK | — |
+| `achievements` | `id` PK, `achievement_key` UNIQUE, `achievement_type`, `threshold`, `unlocked_value`, `unlocked_at` | rep/streak kupa kayıtları |
 | `workout_templates` | `id` PK, `day_number`, `name`, `target_muscles` | — |
 | `template_exercises` | `id` PK, `template_id` FK, `name`, `sets`, `reps`, `weight`, `duration_minutes`, `rest_seconds` | → workout_templates (CASCADE) |
 
@@ -188,11 +206,18 @@ HomeScreen (dashboard)
 | `provider` | ^6.1.5+1 | State management |
 | `intl` | ^0.20.2 | Tarih/sayı formatlama |
 | `table_calendar` | ^3.2.0 | Takvim widget |
-| `file_picker` | ^8.1.7 | Dosya/klasör seçici (backup) |
+| `file_picker` | ^11.0.2 | Dosya/klasör seçici (backup) |
 | `meta` | ^1.11.0 | Annotation'lar |
 | `cupertino_icons` | ^1.0.8 | iOS ikonları |
-| `permission_handler` | ^11.3.1 | Runtime izin yönetimi (storage, notification) |
+| `permission_handler` | ^12.0.1 | Runtime izin yönetimi (notification) |
 | `flutter_local_notifications` | ^18.0.1 | Persistent workout bildirimleri |
+| `in_app_review` | ^2.0.10 | Uygulama içi puanlama/yorum popup akışı |
+
+### Android app bağımlılıkları (`android/app/build.gradle.kts`)
+
+| Paket | Versiyon | Amaç |
+|-------|----------|------|
+| `androidx.activity:activity-ktx` | 1.9.1 | Android 15 edge-to-edge/Activity yardımcı API uyumluluğu |
 
 ---
 
@@ -203,9 +228,6 @@ HomeScreen (dashboard)
 | `INTERNET` | ✅ Var |
 | `POST_NOTIFICATIONS` | ✅ Eklendi |
 | `FOREGROUND_SERVICE` | ✅ Eklendi |
-| `READ_EXTERNAL_STORAGE` | ✅ Eklendi |
-| `WRITE_EXTERNAL_STORAGE` | ✅ Eklendi |
-| `MANAGE_EXTERNAL_STORAGE` | ✅ Eklendi |
 | `VIBRATE` | ✅ Eklendi |
 
 ---
@@ -230,7 +252,7 @@ Cardio UI: Büyük timer gösterimi + Start/Stop butonu + "Save (X min)" butonu.
 4. ~~**Tamamlanma yüzdesi** farklı formüller~~ → Düzeltildi, aynı formül kullanılıyor
 5. ~~**Chart butonu** boş onTap~~ → Kaldırıldı
 6. ~~**Library butonu** gereksiz tekrar~~ → Kaldırıldı
-7. ~~**Backup** PathAccessException~~ → permission_handler ile çözüldü
+7. ~~**Backup** PathAccessException~~ → dosya seçici tabanlı (SAF uyumlu) yedek akışına geçilerek çözüldü
 8. Tüm grafikler `CustomPainter` ile çiziliyor — charting kütüphanesi yok
 9. **Foreground service** yok — agresif OEM'lerde (Xiaomi, Samsung) arka plan timer durabilir
 10. ~~Cardio geçmişi exercise_info & summary ekranlarında hâlâ "X kg x Y reps" formatında~~ → Düzeltildi
@@ -239,6 +261,11 @@ Cardio UI: Büyük timer gösterimi + Start/Stop butonu + "Save (X min)" butonu.
 13. ~~**finishWorkout** sadece son egzersizi kapatıyordu~~ → v3.0.1'de tüm açık egzersizler kapatılıyor
 14. ~~**Kas grubu kategorileri** çok genel (Arms, Legs)~~ → v3.0.1'de Biceps/Triceps, Quadriceps/Hamstrings, Lower Back ayrıldı
 15. ~~**Muscle group matching** custom egzersiz isimlerinde başarısız~~ → v3.0.1'de 60+ override + fuzzy matching + cache
+16. ~~**TR/FR karakter bozulmaları** (mojibake)~~ → `translations.dart` içinde otomatik encoding onarımı eklendi
+17. ~~**Body fat** bazı locale girişlerinde hatalı hesaplanıyordu~~ → locale uyumlu parse + geliştirilmiş formül + BMI durum bilgisi eklendi
+18. **Premium rozet görünürlüğü** sadece Home/Workouts/Library/Stats ana sayfalarda tutuluyor
+19. **Play Console sahiplik doğrulaması** için gereken SHA-256 fingerprint ile yerel keystore fingerprint'i eşleşmiyor; doğru private key olmadan ownership APK imzalanamaz
+20. **Play Console Android 15 deprecated edge-to-edge uyarıları**n bir kısmı Flutter engine `PlatformPlugin` ve AndroidX transitive sınıflarından gelebilir; app-level kodda doğrudan çağrı bulunmasa da sürüme göre advisory uyarı görülebilir
 
 ---
 
@@ -257,6 +284,7 @@ flutter test
 
 # Release
 flutter build apk --release
+./build_free_aab_auto.bat   # Sürümü otomatik artırır ve free AAB build eder
 flutter build windows --release
 ```
 

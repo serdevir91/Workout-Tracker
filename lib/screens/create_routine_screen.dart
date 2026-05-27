@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_plan_models.dart';
+import '../providers/monetization_provider.dart';
 import '../providers/workout_provider.dart';
 import '../widgets/exercise_thumbnail.dart';
 import 'exercise_library_screen.dart';
+import 'paywall_screen.dart';
 
 class CreateRoutineScreen extends StatefulWidget {
   final WorkoutPlan? existingPlan;
@@ -50,6 +52,28 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
     }
 
     final provider = context.read<WorkoutProvider>();
+    final monetization = context.read<MonetizationProvider>();
+
+    if (!_isEditing &&
+        !monetization.canCreateUnlimitedRoutines &&
+        provider.workoutPlans.length + _selectedDays.length >
+            MonetizationProvider.freeRoutineLimit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Free plan allows up to 3 routines. Upgrade to Premium.'),
+        ),
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PaywallScreen(
+            reason:
+                'You reached the free routine limit. Upgrade to create unlimited routines.',
+          ),
+        ),
+      );
+      return;
+    }
 
     if (_isEditing) {
       // Editing existing plan — single day update

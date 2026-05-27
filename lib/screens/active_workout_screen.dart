@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/exercise_thumbnail.dart';
+import '../providers/monetization_provider.dart';
 import '../providers/workout_provider.dart';
 import '../providers/settings_provider.dart';
 import '../l10n/translations.dart';
 import '../models/workout_models.dart';
+import '../services/ad_service.dart';
+import '../services/startup_flow_service.dart';
 import '../utils/formatters.dart';
 import 'exercise_library_screen.dart';
 import 'workout_summary_screen.dart';
@@ -20,6 +23,17 @@ class ActiveWorkoutScreen extends StatefulWidget {
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   final Map<int, TextEditingController> _weightControllers = {};
   final Map<int, TextEditingController> _repsControllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final monetization = context.read<MonetizationProvider>();
+      if (monetization.adsEnabled) {
+        AdService.instance.preloadWorkoutFinishInterstitial();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -553,6 +567,30 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                         },
                         child: InkWell(
                           onTap: () {
+                            if (!isCardio) {
+                              // Copy weight and reps to input fields
+                              final wCtrl = _getWeightController(exerciseId, provider);
+                              final rCtrl = _getRepsController(exerciseId, provider);
+                              
+                              final weightStr = s.weight == s.weight.toInt() 
+                                  ? s.weight.toInt().toString() 
+                                  : s.weight.toStringAsFixed(1);
+                              
+                              wCtrl.text = weightStr;
+                              rCtrl.text = s.reps.toString();
+                              
+                              provider.setDraftWeight(exerciseId, weightStr);
+                              provider.setDraftReps(exerciseId, s.reps.toString());
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Set copied to input fields'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          },
+                          onLongPress: () {
                             _showEditSetDialog(
                               context,
                               provider,
@@ -616,6 +654,26 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                                     ),
                                   ),
                                 ],
+                                
+                                // Edit Button
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                  onPressed: () {
+                                    _showEditSetDialog(
+                                      context,
+                                      provider,
+                                      exerciseId,
+                                      s,
+                                      isCardio: isCardio,
+                                    );
+                                  },
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
+                                ),
                               ],
                             ),
                           ),
@@ -753,13 +811,78 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      'Last Session: ${lastRecord['sets']} Sets (Max: ${context.read<SettingsProvider>().formatWeight((lastRecord['max_weight'] as num).toDouble())}, ${lastRecord['total_reps']} ${Translations.of(context).get('reps')})',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Last Session: ${lastRecord['sets']} Sets (Max: ${context.read<SettingsProvider>().formatWeight((lastRecord['max_weight'] as num).toDouble())})',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        if (lastRecord['set_details'] != null && lastRecord['set_details'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: (lastRecord['set_details'] as String)
+                                .split('|')
+                                .map((setDetail) {
+                              return InkWell(
+                                onTap: () {
+                                  if (!isCardio) {
+                                    final parts = setDetail.split('x');
+                                    if (parts.length == 2) {
+                                      final w = double.tryParse(parts[0]) ?? 0;
+                                      final r = parts[1];
+                                      
+                                      final wCtrl = _getWeightController(exerciseId, provider);
+                                      final rCtrl = _getRepsController(exerciseId, provider);
+                                      
+                                      final weightStr = w == w.toInt() 
+                                          ? w.toInt().toString() 
+                                          : w.toStringAsFixed(1);
+                                          
+                                      wCtrl.text = weightStr;
+                                      rCtrl.text = r;
+                                      
+                                      provider.setDraftWeight(exerciseId, weightStr);
+                                      provider.setDraftReps(exerciseId, r);
+                                      
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Copied: $weightStr ${context.read<SettingsProvider>().unit} x $r'),
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    setDetail,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -1270,6 +1393,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     // Gather summary data while the workout is still active
     final workoutName = provider.activeWorkout?.name ?? 'Workout';
     final duration = provider.workoutElapsedSeconds;
+    final completionPercentage = provider.completionPercentage;
     int setsCompleted = 0;
     double volume = 0;
     for (var ex in provider.activeExercises) {
@@ -1310,8 +1434,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx); // Close dialog
+
+              final monetization = context.read<MonetizationProvider>();
+              if (monetization.adsEnabled) {
+                await AdService.instance.showWorkoutFinishInterstitial();
+              }
+
+              await provider.finishWorkout();
+              final rateReviewState =
+                  await const StartupFlowService()
+                      .registerWorkoutCompletionAndEvaluate();
+
+              if (!context.mounted) return;
 
               Navigator.pushReplacement(
                 context,
@@ -1322,13 +1458,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     setsCompleted: setsCompleted,
                     volume: volume,
                     calories: calories.toInt(),
-                    completionPercentage: provider.completionPercentage,
+                    completionPercentage: completionPercentage,
+                    showRateReviewPrompt: rateReviewState.shouldShowPrompt,
                   ),
                 ),
               );
-
-              // Fire and forget
-              provider.finishWorkout();
             },
             child: Text(
               Translations.of(context).get('finish'),

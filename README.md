@@ -126,11 +126,28 @@ flutter build apk --release
 flutter build windows
 ```
 
-## What's New (v3.1.6)
+## What's New (v3.1.21)
+
+- **Encoding Bug Fix** - Fixed Turkish character comment encoding issue in the SQLite database helper.
+
+<details>
+<summary>v3.1.20 Changes</summary>
+
+- **Redesigned Stats Dashboard, Streaks & Trophies** - Migrated trophies from reps to total completed sets, and modernized the stats screen with active streaks, trophy display racks, and responsive movement charts.
+- **Secure File Picker Backup/Restore (SAF)** - Shifted backup/restore flows to Android Storage Access Framework (SAF) via system picker, removing the need for broad storage access permissions.
+- **Android 15 Native Edge-to-Edge Support** - Fully implemented native edge-to-edge compatibility, customized display cutout behaviors, and resolved deprecation warnings.
+- **Post-Workout Rating Popups** - Integrated Google Play In-App Review API to request user ratings and feedback after completing workouts.
+
+</details>
+
+<details>
+<summary>v3.1.6 Changes</summary>
 
 - **New Languages Added** - German (Deutsch) and French (Français) were added to the app language picker.
 - **Localization Infrastructure Updated** - Date/locale mapping now supports `de_DE` and `fr_FR`.
 - **README Updated** - Documentation now reflects EN/TR/ES/DE/FR localization support.
+
+</details>
 
 <details>
 <summary>v3.1.5 Changes</summary>

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'db/database_helper.dart';
+import 'providers/monetization_provider.dart';
 import 'providers/workout_provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/startup_gate.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   DatabaseHelper.initDatabaseFactory();
   await NotificationService().init();
   runApp(const WorkoutTrackerApp());
@@ -22,6 +26,9 @@ class WorkoutTrackerApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => WorkoutProvider()..loadWorkouts()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+        ChangeNotifierProvider(
+          create: (_) => MonetizationProvider()..initialize(),
+        ),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
@@ -31,6 +38,19 @@ class WorkoutTrackerApp extends StatelessWidget {
             title: 'Workout Tracker',
             debugShowCheckedModeBanner: false,
             themeMode: settings.themeMode,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''),
+              Locale('tr', ''),
+              Locale('es', ''),
+              Locale('de', ''),
+              Locale('fr', ''),
+            ],
+            locale: Locale(settings.language, ''),
             
             // --- Light Theme ---
             theme: ThemeData(
@@ -176,7 +196,7 @@ class WorkoutTrackerApp extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
-            home: const HomeScreen(),
+            home: const StartupGate(),
           );
         },
       ),

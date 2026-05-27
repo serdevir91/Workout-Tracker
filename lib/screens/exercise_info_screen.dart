@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/monetization_provider.dart';
 import '../providers/workout_provider.dart';
+import '../providers/settings_provider.dart';
 import '../models/workout_models.dart';
 import '../models/workout_plan_models.dart';
 import '../utils/exercise_db.dart';
 import '../utils/formatters.dart';
+import '../utils/one_rm_calculator.dart';
 import '../l10n/translations.dart';
+import 'paywall_screen.dart';
 
 /// Full exercise detail screen matching the app design.
 /// Can be opened from:
@@ -116,6 +120,17 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
           _repsController.text = widget.targetReps.toString();
         }
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ExerciseInfoScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.imageUrls != oldWidget.imageUrls) {
+      _imageUrls = List<String>.from(widget.imageUrls);
+      _currentImageIndex = 0;
+      _imageCycleTimer?.cancel();
+      _startImageCycle();
     }
   }
 
@@ -550,7 +565,6 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                   onTap: () => Navigator.pop(context),
                   theme: theme,
                 ),
-                actions: const [SizedBox(width: 8)],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -790,6 +804,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
                     // ── "Add to Workout" button (library/view-only mode) ──
                     if (!isInteractive)
                       _buildAddToWorkoutButton(provider, t, theme),
+
+                    _buildOneRmSection(currentSets),
+
+                    const SizedBox(height: 16),
 
                     // ── HISTORY Section ─────────────────────────────
                     _buildHistorySection(),
@@ -1896,6 +1914,104 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     }
   }
 
+  double? _bestEstimatedOneRm(List<ExerciseSet> currentSets) {
+    return OneRmCalculator.bestCombined(
+      currentSets: currentSets,
+      history: _history,
+    );
+  }
+
+  Widget _buildOneRmSection(List<ExerciseSet> currentSets) {
+    if (_isCardio) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final monetization = context.watch<MonetizationProvider>();
+    final oneRm = _bestEstimatedOneRm(currentSets);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.colorScheme.outline),
+        ),
+        child: monetization.hasOneRm
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.analytics_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Estimated 1RM',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    oneRm == null
+                        ? 'Log heavier sets to see your estimated one-rep max.'
+                        : '${oneRm.toStringAsFixed(1)} ${context.read<SettingsProvider>().unit}',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.lock,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '1RM analysis is Premium',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PaywallScreen(
+                            reason:
+                                '1RM analysis is part of Premium features.',
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Unlock Premium'),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _buildHistorySection() {
     final theme = Theme.of(context);
     final provider = context.read<WorkoutProvider>();
@@ -2153,30 +2269,55 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 28,
-                    child: Text(
-                      '#$setNum',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13,
+              child: InkWell(
+                onTap: () {
+                  final provider = context.read<WorkoutProvider>();
+                  if (widget.exerciseId != null && provider.isWorkoutActive && !_isCardio) {
+                    final weightStr = weight == weight.toInt() 
+                        ? weight.toInt().toString() 
+                        : weight.toStringAsFixed(1);
+                        
+                    // Update the local text fields
+                    _weightController.text = weightStr;
+                    _repsController.text = reps.toString();
+                    
+                    // Set draft properties via provider directly 
+                    provider.setDraftWeight(widget.exerciseId!, weightStr);
+                    provider.setDraftReps(widget.exerciseId!, reps.toString());
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Copied: $weightStr ${context.read<SettingsProvider>().unit} x $reps'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '#$setNum',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      _isCardio
-                          ? '$reps min'
-                          : '${weight > 0 ? "${weight.toStringAsFixed(weight == weight.toInt() ? 0 : 1)} kg" : "BW"} × $reps reps',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 13,
+                    Expanded(
+                      child: Text(
+                        _isCardio
+                            ? '$reps min'
+                            : '${weight > 0 ? "${weight.toStringAsFixed(weight == weight.toInt() ? 0 : 1)} kg" : "BW"} × $reps reps',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }),
@@ -2185,5 +2326,6 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> {
     );
   }
 }
+
 
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../db/database_helper.dart';
+import '../utils/body_composition.dart';
 
 /// Color palette preset definitions.
 class AppColorPalette {
@@ -117,11 +118,12 @@ class SettingsProvider with ChangeNotifier {
     _applyIntlLocale();
   }
 
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.dark;
   String _language = 'en';
   String _measurementSystem = 'metric'; // 'metric' or 'imperial'
-  String _colorPaletteId = 'default';
-  String _backgroundMode = 'default'; // 'default', 'pure_black'
+  String _colorPaletteId = 'ocean';
+  String _backgroundMode = 'pure_black'; // 'default', 'pure_black'
+  BodyGender? _gender;
 
   double? _height; // always stored in cm
   double? _weight; // always stored in kg
@@ -154,6 +156,7 @@ class SettingsProvider with ChangeNotifier {
   AppColorPalette get colorPalette => AppColorPalette.getById(_colorPaletteId);
   String get backgroundMode => _backgroundMode;
   bool get isPureBlack => _backgroundMode == 'pure_black';
+  BodyGender? get gender => _gender;
 
   /// Weight unit string for display.
   String get unit => isMetric ? 'kg' : 'lbs';
@@ -222,7 +225,7 @@ class SettingsProvider with ChangeNotifier {
     return dayNames[dayNumber - 1];
   }
 
-  // ── Display helpers (automatically convert based on system) ──
+  // Display helpers (automatically convert based on system)
 
   /// Display weight value (converts from kg if imperial).
   double displayWeight(double kgValue) =>
@@ -288,6 +291,7 @@ class SettingsProvider with ChangeNotifier {
         _height = (settings['height'] as num?)?.toDouble();
         _weight = (settings['weight'] as num?)?.toDouble();
         _lastWeightUpdate = settings['last_weight_update'] as String?;
+        _gender = _genderFromStorage(settings['gender'] as String?);
 
         // Body measurements
         _armCircumference = (settings['arm_circumference'] as num?)?.toDouble();
@@ -316,8 +320,16 @@ class SettingsProvider with ChangeNotifier {
             .map((e) => int.tryParse(e) ?? 1)
             .toList();
 
-        _colorPaletteId = settings['color_palette'] as String? ?? 'default';
-        _backgroundMode = settings['background_mode'] as String? ?? 'default';
+        final storedPalette = settings['color_palette'] as String?;
+        final storedBackground = settings['background_mode'] as String?;
+        _colorPaletteId =
+            (storedPalette == null || storedPalette == 'default')
+                ? 'ocean'
+                : storedPalette;
+        _backgroundMode =
+            (storedBackground == null || storedBackground == 'default')
+                ? 'pure_black'
+                : storedBackground;
         _firstDayOfWeek = (settings['first_day_of_week'] as int?) ?? 1;
 
         notifyListeners();
@@ -353,7 +365,7 @@ class SettingsProvider with ChangeNotifier {
     await _saveToDb({'measurement_system': system, 'unit': legacyUnit});
   }
 
-  /// Legacy method — kept for backward compat.
+  /// Legacy method kept for backward compatibility.
   Future<void> updateUnit(String newUnit) async {
     final system = newUnit == 'lbs' ? 'imperial' : 'metric';
     await updateMeasurementSystem(system);
@@ -377,14 +389,28 @@ class SettingsProvider with ChangeNotifier {
     await _saveToDb({'first_day_of_week': day});
   }
 
-  Future<void> updateProfile(double heightCm, double weightKg) async {
+  Future<void> updateGender(BodyGender? gender) async {
+    _gender = gender;
+    notifyListeners();
+    await _saveToDb({'gender': _genderToStorage(gender)});
+  }
+
+  Future<void> updateProfile(
+    double heightCm,
+    double weightKg, {
+    BodyGender? gender,
+  }) async {
     _height = heightCm;
     _weight = weightKg;
+    if (gender != null) {
+      _gender = gender;
+    }
     _lastWeightUpdate = DateTime.now().toIso8601String();
     notifyListeners();
     await _saveToDb({
       'height': heightCm,
       'weight': weightKg,
+      'gender': _genderToStorage(_gender),
       'last_weight_update': _lastWeightUpdate,
     });
   }
@@ -472,6 +498,28 @@ class SettingsProvider with ChangeNotifier {
     'neck_circumference': _neckCircumference,
     'forearm_circumference': _forearmCircumference,
   };
+
+  String? _genderToStorage(BodyGender? gender) {
+    switch (gender) {
+      case BodyGender.male:
+        return 'male';
+      case BodyGender.female:
+        return 'female';
+      case null:
+        return null;
+    }
+  }
+
+  BodyGender? _genderFromStorage(String? value) {
+    switch (value) {
+      case 'male':
+        return BodyGender.male;
+      case 'female':
+        return BodyGender.female;
+      default:
+        return null;
+    }
+  }
 
   Future<void> _saveToDb(Map<String, dynamic> data) async {
     await DatabaseHelper().updateUserSettings(data);

@@ -11,6 +11,8 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 android/.gradle/
+android/key.properties
+android/*.jks
 android/app/src/main/gen/
 windows/flutter/ephemeral/
 
